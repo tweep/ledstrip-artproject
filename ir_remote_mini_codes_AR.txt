@@ -1,0 +1,35 @@
+This remote got delivered with the Arduino IR receiver. 
+
+The REPEAT code is : FFFFFFFF
+
+Codes are: 
+
+Ch-   FFA25D
+Ch    FF629D
+Ch+   FFE21D
+
+|<<   FF22DD 
+>>|   FF02FD
+>||   FFC23D
+
+-     FFE01F
++     FFA857
+EQ    FF906F
+
+0      FF6897
+100+   FF9867
+200+   FFB04F
+
+1    FF30CF
+2    FF18E7
+3    FF7A85
+
+4    FF10EF
+5    FF38C7
+6    FF5AA5
+
+7    FF42BD
+8    FF4AB5
+9    FF52AD
+
+

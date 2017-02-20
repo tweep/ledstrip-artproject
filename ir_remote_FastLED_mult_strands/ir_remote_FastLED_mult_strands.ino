@@ -66,7 +66,7 @@ void configure_stuff (long tmp) {
 
     case 0xE0E01AE5 :
       Serial.println("Entering menu operation"); 
-      enterMenu(); 
+    //  enterMenu(); 
       break; 
         
     case 0xE0E020DF : // BUTTON 1 

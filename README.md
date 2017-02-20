@@ -17,6 +17,32 @@ A color transition in JSfiddle: https://jsfiddle.net/user/vogelj/
 - FastLED 
 - Infrared library ( currently: IRemote, as IRlib2 has conflicts with interrupts) 
 
+## Project status and files 
+After realizing that there are some timing problems when using the FastLed library together with an IR-remote (the FastLed library turns all interrrupts off), I decided to use 2 Arduino boards for the project: 
+
+ 1.  1 x Arduino MEGA which controls the FastLED patterns and strands   
+ * uses FastLED library to drive the strands 
+ * EasyTransfer library to receive data via I2C from the Arduino Uno menu / UI and translate them into 
+   visible patterns
+ * code for patterns, transitions, and FastLED configuration 
+
+ 2.  1 x Arduino UNO to drive the User interface: 
+ * LCD display with keypad 
+ * Menu structure on LCD 
+ * IR receiver to remote control the same menu with an IR remote 
+ * EasyTransfer library to send data via I2C to the Arduino Mega 
+
+
+## Code Stages 
+
+### UNO_LCD_I2C_TX_example 
+File UNO_LCD_I2C_TX_example.ino contains a fully working example for the Arduino Uno which 
+  - shows a menu for 2 LED strands + some global configuration 
+  - interfaces with an IR remote to use the menu   
+  - interfaces with a keypad on the menu to choose functions 
+  - sends the data to the Arduno Mega via I2C communication 
+
+
 ## Todo: 
 
 - allow to control brightness of strands individuall ( could be combined with the on/off possibility )    
