@@ -42,6 +42,17 @@ File UNO_LCD_I2C_TX_example.ino contains a fully working example for the Arduino
   - interfaces with a keypad on the menu to choose functions 
   - sends the data to the Arduno Mega via I2C communication 
 
+This example uses the following libraries: 
+ - Wire.h
+ - EasyTransferI2C.h
+ - LiquidCrystal.h
+ - MenuEntry.h"
+ - MenuLCD.h"
+ - MenuManager.h"
+ - IRremote.h
+ - IRremoteInt.h
+
+
 
 ## Todo: 
 
