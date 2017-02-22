@@ -1,10 +1,9 @@
 
-// ARDUINO LED MEGA - control LEDs
+// ARDUINO LED SLAVE - drives the LEDS and knows all about transitions
 
 #include <Wire.h>
 #include <EasyTransferI2C.h>
 
-//create object
 EasyTransferI2C ET; 
 
 struct RECEIVE_DATA_STRUCTURE{
@@ -15,12 +14,9 @@ struct RECEIVE_DATA_STRUCTURE{
   int spd;
   int bright;
   int color;
-  int blinks;
-  int pause;
 };
 RECEIVE_DATA_STRUCTURE mydata;
 
-//define slave i2c address
 #define I2C_SLAVE_ADDRESS 9
 
 void setup(){
@@ -31,15 +27,10 @@ void setup(){
   ET.begin(details(mydata), &Wire);
   //define handler function on receiving data
   Wire.onReceive(receive);
-  
-  pinMode(13, OUTPUT);
-  Serial.println("LED-Mega is Ready");
+  Serial.println("Slave is to read data and to drive LEDs");
 }
 
 void loop() {
-  //check and see if a data packet has come in. 
-
-  
   if(ET.receiveData()){
     
     Serial.println("Retrieving data...");
@@ -50,8 +41,11 @@ void loop() {
     Serial.print(" brigh: "); Serial.print(mydata.bright);
     Serial.print(" color: "); Serial.print(mydata.color);
     Serial.println(" ");
-    
+    // routine which configures the specific strip: speed, pattern, brightness, on/off
+    // routine which configures ALL strips: off/on, global brightness, ... 
   }
 }
 
-void receive(int numBytes) {}
+void receive(int numBytes) {
+  Serial.println("DATA !");
+  }

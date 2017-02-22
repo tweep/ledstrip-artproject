@@ -58,7 +58,7 @@ struct SEND_DATA_STRUCTURE{
   uint8_t pause;
 };
 
-SEND_DATA_STRUCTURE mydata;
+SEND_DATA_STRUCTURE ledStripConf;
 #define I2C_SLAVE_ADDRESS 9  
 
 //Now create the MenuLCD and MenuManager classes.
@@ -121,14 +121,9 @@ void configureLEDstripAll ( char * pMenuText, void * pUserData ) {
    *(( int *) pUserData) = -1;
 }
 
- 
-//This callback uses the built-in Int Input routine in MenuManager.h to request input of a integer number from the 
-//user.  Control will pass to the DoIntInput function until the user finishes.  the g_timerTime will be set to the 
-//value the user selects.
-
 
 void SetPattern( char* pMenuText, void *pUserData ) {
-  char *pLabel = "Choose Pattern ^";
+  char *pLabel = (char*)"Choose Pattern ^";
   
   int iNumLabelLines = 1;
   int iMin   = 1;
@@ -144,11 +139,11 @@ void SetPattern( char* pMenuText, void *pUserData ) {
   Serial.println("  Pattern: "); 
   Serial.println(g_pattern); 
 
-  mydata.ledStripToConfigure = g_ledStripToConfigure;
-  mydata.pattern = g_pattern;
+  ledStripConf.ledStripToConfigure = g_ledStripToConfigure;
+  ledStripConf.pattern = g_pattern;
 }
 void SetSpeed ( char* pMenuText, void *pUserData ) {
-  char *pLabel = "Choose Speed ^";
+  char *pLabel = (char*)"Choose Speed ^";
   int iNumLabelLines = 1;
   int iMin   = 1;
   int iMax   = 255;
@@ -156,11 +151,11 @@ void SetSpeed ( char* pMenuText, void *pUserData ) {
   int iStep  = 5;
   
   g_menuManager.DoIntInput( iMin, iMax, iStart, iStep, &pLabel, iNumLabelLines, &g_speed );
-  mydata.ledStripToConfigure = g_ledStripToConfigure;
-  mydata.spd = g_speed;
+  ledStripConf.ledStripToConfigure = g_ledStripToConfigure;
+  ledStripConf.spd = g_speed;
 }
 void SetBrightness ( char* pMenuText, void *pUserData ) {
-  char *pLabel = "Choose Brightness";
+  char *pLabel = (char*)"Choose Brightness";
   int iNumLabelLines = 1;
   int iMin = 1;
   int iMax = 255;
@@ -168,11 +163,11 @@ void SetBrightness ( char* pMenuText, void *pUserData ) {
   int iStep = 5;
 
   g_menuManager.DoIntInput( iMin, iMax, iStart, iStep, &pLabel, iNumLabelLines, &g_bright);
-  mydata.ledStripToConfigure = g_ledStripToConfigure;
-  mydata.bright = g_bright;
+  ledStripConf.ledStripToConfigure = g_ledStripToConfigure;
+  ledStripConf.bright = g_bright;
 } 
 void SetColor ( char* pMenuText, void *pUserData ) {
-  char *pLabel = "Choose Color ^:";
+  char *pLabel = (char*)"Choose Color ^:";
   int iNumLabelLines = 1;
   int iMin = 1;
   int iMax = 255;
@@ -181,8 +176,8 @@ void SetColor ( char* pMenuText, void *pUserData ) {
   int iStep = 5;
 
   g_menuManager.DoIntInput( iMin, iMax, iStart, iStep, &pLabel, iNumLabelLines, &g_color);
-  mydata.ledStripToConfigure = g_color;
-  mydata.color = g_color;
+  ledStripConf.ledStripToConfigure = g_color;
+  ledStripConf.color = g_color;
 }
 
 // turn all strands off : g_ledStripToConfigure = -1 ; toggleStrand = false / true 
@@ -195,38 +190,41 @@ void setupMenus() {
   //MenuEntry( char * menuText, void * userData/*=0*/, MENU_ACTION_CALLBACK_FUNC func);
 
 //                                                                    VARIABLE-TO-CHANGE        FUNCTION_WHICH_MANIPULATES_VARIABLE 
-p_menuEntryRoot = new MenuEntry("1. LED Strand ",            (void *) (&g_ledStripToConfigure) , configureLEDstripOne);  
+//p_menuEntryRoot = new MenuEntry("1. LED Strand ",            (void *) (&g_ledStripToConfigure) , configureLEDstripOne);  
+// handing over address of STRUCT member variable. does this work ? 
+p_menuEntryRoot = new MenuEntry((char*)"1. LED Strand ",            (void *) (&ledStripConf.ledStripToConfigure) , configureLEDstripOne);  
+
     g_menuManager.addMenuRoot( p_menuEntryRoot );
-    g_menuManager.addChild( new MenuEntry("Set Pattern",     (void *) (&g_pattern),  SetPattern) );
-    g_menuManager.addChild( new MenuEntry("Set Speed",       (void *) (&g_speed),    SetSpeed ));
-    g_menuManager.addChild( new MenuEntry("Set Brightness",  (void *) (&g_bright),   SetBrightness ));
-    g_menuManager.addChild( new MenuEntry("Set Color",       (void *) (&g_color),    SetColor ));
+    g_menuManager.addChild( new MenuEntry((char*)"Set Pattern",     (void *) (&g_pattern),  SetPattern) );
+    g_menuManager.addChild( new MenuEntry((char*)"Set Speed",       (void *) (&g_speed),    SetSpeed ));
+    g_menuManager.addChild( new MenuEntry((char*)"Set Brightness",  (void *) (&g_bright),   SetBrightness ));
+    g_menuManager.addChild( new MenuEntry((char*)"Set Color",       (void *) (&g_color),    SetColor ));
     
     //                                                                 pass address of variable and pass MenuEntry_BoolTrueCallbacFunc    
-    g_menuManager.addChild( new MenuEntry( "Turn Strip ON",  (void *) (&g_toggleStrand), MenuEntry_BoolTrueCallbackFunc ) );
-    g_menuManager.addChild( new MenuEntry( "Turn Strip OFF", (void *) (&g_toggleStrand), MenuEntry_BoolFalseCallbackFunc ) );
-    g_menuManager.addChild( new MenuEntry( "Reset strand",   (void *) (&g_toggleStrand), MenuEntry_BoolFalseCallbackFunc ) );
-    g_menuManager.addChild( new MenuEntry("Back",            (void *)   &g_menuManager,  MenuEntry_BackCallbackFunc) );
+    g_menuManager.addChild( new MenuEntry((char*) "Turn Strip ON",  (void *) (&g_toggleStrand), MenuEntry_BoolTrueCallbackFunc ) );
+    g_menuManager.addChild( new MenuEntry((char*) "Turn Strip OFF", (void *) (&g_toggleStrand), MenuEntry_BoolFalseCallbackFunc ) );
+    g_menuManager.addChild( new MenuEntry((char*) "Reset strand",   (void *) (&g_toggleStrand), MenuEntry_BoolFalseCallbackFunc ) );
+    g_menuManager.addChild( new MenuEntry((char*)"Back",            (void *)   &g_menuManager,  MenuEntry_BackCallbackFunc) );
 
 g_menuManager.SelectRoot();
-g_menuManager.addSibling( new MenuEntry("2. LED Strand ",    (void *) (&g_ledStripToConfigure), configureLEDstripTwo ) );
+g_menuManager.addSibling( new MenuEntry((char*)"2. LED Strand ",    (void *) (&g_ledStripToConfigure), configureLEDstripTwo ) );
 g_menuManager.MenuDown();
-    g_menuManager.addChild( new MenuEntry("Set Pattern",     (void *) (&g_pattern),      SetPattern) );
-    g_menuManager.addChild( new MenuEntry("Set Speed",       (void *) (&g_speed),        SetSpeed ));
-    g_menuManager.addChild( new MenuEntry("Set Brightness",  (void *) (&g_bright),       SetBrightness ));
-    g_menuManager.addChild( new MenuEntry("Set Color",       (void *) (&g_color),        SetColor ));
-    g_menuManager.addChild( new MenuEntry( "Turn Strip ON",  (void *) (&g_toggleStrand), MenuEntry_BoolTrueCallbackFunc ) );
-    g_menuManager.addChild( new MenuEntry( "Turn Strip OFF", (void *) (&g_toggleStrand), MenuEntry_BoolFalseCallbackFunc ) );
-    g_menuManager.addChild( new MenuEntry( "Reset strand",   (void *) (&g_toggleStrand), MenuEntry_BoolFalseCallbackFunc ) );
-    g_menuManager.addChild( new MenuEntry( "Back",           (void *)  &g_menuManager,   MenuEntry_BackCallbackFunc) );
+    g_menuManager.addChild( new MenuEntry((char*)"Set Pattern",     (void *) (&g_pattern),      SetPattern) );
+    g_menuManager.addChild( new MenuEntry((char*)"Set Speed",       (void *) (&g_speed),        SetSpeed ));
+    g_menuManager.addChild( new MenuEntry((char*)"Set Brightness",  (void *) (&g_bright),       SetBrightness ));
+    g_menuManager.addChild( new MenuEntry((char*)"Set Color",       (void *) (&g_color),        SetColor ));
+    g_menuManager.addChild( new MenuEntry((char*) "Turn Strip ON",  (void *) (&g_toggleStrand), MenuEntry_BoolTrueCallbackFunc ) );
+    g_menuManager.addChild( new MenuEntry((char*) "Turn Strip OFF", (void *) (&g_toggleStrand), MenuEntry_BoolFalseCallbackFunc ) );
+    g_menuManager.addChild( new MenuEntry((char*) "Reset strand",   (void *) (&g_toggleStrand), MenuEntry_BoolFalseCallbackFunc ) );
+    g_menuManager.addChild( new MenuEntry((char*) "Back",           (void *)  &g_menuManager,   MenuEntry_BackCallbackFunc) );
 
 g_menuManager.SelectRoot();
-g_menuManager.addSibling( new MenuEntry("Global configuration ",   (void *) (&g_ledStripToConfigure), configureLEDstripAll ) );
+g_menuManager.addSibling( new MenuEntry((char*)"Global configuration ",   (void *) (&g_ledStripToConfigure), configureLEDstripAll ) );
 g_menuManager.MenuDown();
-    g_menuManager.addChild( new MenuEntry("Reset all",             (void *) (&g_pattern),     SetPattern) );
-    g_menuManager.addChild( new MenuEntry("Global brightness",     (void *) (&g_bright),      SetBrightness ));
-    g_menuManager.addChild( new MenuEntry("Global color",          (void *) (&g_color),       SetColor ));
-    g_menuManager.addChild( new MenuEntry("Back",                  (void *)  &g_menuManager,  MenuEntry_BackCallbackFunc) );
+    g_menuManager.addChild( new MenuEntry((char*)"Reset all",             (void *) (&g_pattern),     SetPattern) );
+    g_menuManager.addChild( new MenuEntry((char*)"Global brightness",     (void *) (&g_bright),      SetBrightness ));
+    g_menuManager.addChild( new MenuEntry((char*)"Global color",          (void *) (&g_color),       SetColor ));
+    g_menuManager.addChild( new MenuEntry((char*)"Back",                  (void *)  &g_menuManager,  MenuEntry_BackCallbackFunc) );
 
 //Get the selection state back to the root for startup and to add the last entry
  g_menuManager.SelectRoot();
@@ -246,7 +244,7 @@ void setup() {
   
   //EasyTransfer setup 
   Wire.begin();
-  ET.begin(details(mydata), &Wire);
+  ET.begin(details(ledStripConf), &Wire);
   randomSeed(analogRead(0));
   pinMode(13, OUTPUT);
 }
@@ -286,16 +284,16 @@ void loop()  {
 void i2c_send_data_structure(){
   
   Serial.println("EasyTransfer SENDING");
-   mydata.blinks = 3;
-   mydata.pause = 2;
+   ledStripConf.blinks = 3;
+   ledStripConf.pause = 2;
    ET.sendData(I2C_SLAVE_ADDRESS);
    
   //Just for fun, we will blink it out too
-  for(int i = mydata.blinks; i>0; i--){
+  for(int i = ledStripConf.blinks; i>0; i--){
     digitalWrite(13, HIGH);
-    delay(mydata.pause * 100);
+    delay(ledStripConf.pause * 100);
     digitalWrite(13, LOW);
-    delay(mydata.pause * 100);
+    delay(ledStripConf.pause * 100);
    }
  delay(10);
 }
