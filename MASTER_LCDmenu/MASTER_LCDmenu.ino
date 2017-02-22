@@ -34,7 +34,7 @@ const int LCDRS = 8;
 
 bool configUpdated = false;
 
-#define nrLEdStrands 4
+#define nrLEDStrands 4
 
 
 // IR REMOTE CODE
@@ -43,7 +43,6 @@ bool configUpdated = false;
 IRrecv irrecv(IR_RECV_PIN);
 decode_results results;
 
-// EasyTransfer code 
 EasyTransferI2C ET; 
 
 struct SEND_DATA_STRUCTURE{
@@ -54,14 +53,9 @@ struct SEND_DATA_STRUCTURE{
   int spd;
   int bright;
   int color;
-  int blinks;
-  int pause;
 } mydata; 
 
-
-// structure to keep the config values for the state
-/*
-struct LED_CONFIG {
+typedef struct{
   int toggleStrand;
   int pattern;
   int spd;
@@ -69,9 +63,8 @@ struct LED_CONFIG {
   int color;
   int blinks;
   int pause;
-} ledConfig [nrLEdStrands]; 
-*/
-
+} struct_ledconf;
+struct_ledconf ledConfig[nrLEDStrands];
 
 #define I2C_SLAVE_ADDRESS 9  
 
@@ -85,19 +78,6 @@ MenuManager g_menuManager( &g_menuLCD, doRootAction);  //pass  g_menuLCD object 
 
 unsigned int g_isDisplaying = false;
 
-// Global variables to configure our LED strips, used by our Menu libraryr 
-
-byte   g_toggleStrand = 1;        // variable to turn specific strand on/off
-int    g_pattern = 3;            // MenuManager::DoIntInput only takes int but no uint8_t
-int    g_speed   = 50;
-int    g_bright  = 50;
-int    g_color   = 50;
-
-int  ga_pattern      [4] = { 1,2,3,4 }; 
-int  ga_speed        [4] = { 50, 50, 50, 50}; 
-int  ga_bright       [4] = {128, 128, 128, 128 }; 
-int  ga_color        [4] = {128, 128, 128, 128 }; 
-byte ga_toggleStrand [4] = {1, 1, 1, 1}; 
 
 /*
  *    1. LED strip
@@ -137,6 +117,9 @@ void configureLEDstripTwo ( char * pMenuText, void * pUserData ) {
 void configureLEDstripThree ( char * pMenuText, void * pUserData ) {
    *(( int *) pUserData) = 2;
 }
+void configureLEDstripFour ( char * pMenuText, void * pUserData ) {
+   *(( int *) pUserData) = 3;
+}
 void configureLEDstripAll ( char * pMenuText, void * pUserData ) {
    // dereference data type which is userData
    *(( int *) pUserData) = -1;
@@ -154,34 +137,29 @@ void SetPattern( char* pMenuText, void *pUserData ) {
   int iNumLabelLines = 1;
   int iMin   = 1;
   int iMax   = 10;
-  int iStart = ga_pattern[mydata.ledStripToConfigure];
-  Serial.println("Starting with pattern: ");
-  Serial.println(iStart); 
-                           
+  // previously stored value 
+  int iStart = ledConfig[mydata.ledStripToConfigure].pattern;  // global       
   int iStep  = 1;  //Each user input action (such as a push of button) will step this amount
-
-  g_menuManager.DoIntInput( iMin, iMax, iStart, iStep, &pLabel, iNumLabelLines, &mydata.pattern );
+   g_menuManager.DoIntInput( iMin, iMax, iStart, iStep, &pLabel, iNumLabelLines, &ledConfig[mydata.ledStripToConfigure].pattern );    
 }
 void SetSpeed ( char* pMenuText, void *pUserData ) {
   char *pLabel = (char *)"Choose Speed ^";
   int iNumLabelLines = 1;
   int iMin   = 1;
   int iMax   = 255;
-  int iStart = ga_speed[mydata.ledStripToConfigure];
+  int iStart = ledConfig[mydata.ledStripToConfigure].spd; 
   int iStep  = 5;
   
-  g_menuManager.DoIntInput( iMin, iMax, iStart, iStep, &pLabel, iNumLabelLines, &mydata.spd );
-  ga_speed[mydata.ledStripToConfigure] = mydata.spd;
-
+  g_menuManager.DoIntInput( iMin, iMax, iStart, iStep, &pLabel, iNumLabelLines,&ledConfig[mydata.ledStripToConfigure].spd );
 }
 void SetBrightness ( char* pMenuText, void *pUserData ) {
   char *pLabel = (char *)"Choose Brightness";
   int iNumLabelLines = 1;
   int iMin = 1;
   int iMax = 255;
-  int iStart = ga_bright[mydata.ledStripToConfigure];
+  int iStart = ledConfig[mydata.ledStripToConfigure].bright;
   int iStep = 5;
-  g_menuManager.DoIntInput( iMin, iMax, iStart, iStep, &pLabel, iNumLabelLines, &mydata.bright);
+  g_menuManager.DoIntInput( iMin, iMax, iStart, iStep, &pLabel, iNumLabelLines, &ledConfig[mydata.ledStripToConfigure].bright);
 
 }
 void SetColor ( char* pMenuText, void *pUserData ) {
@@ -189,57 +167,67 @@ void SetColor ( char* pMenuText, void *pUserData ) {
   int iNumLabelLines = 1;
   int iMin = 1;
   int iMax = 255;
-  int iStart = ga_color[mydata.ledStripToConfigure];
+  int iStart = ledConfig[mydata.ledStripToConfigure].color;
 
   //Each user input action (such as a push of button) will step this amount
   int iStep = 5;
 
-  g_menuManager.DoIntInput( iMin, iMax, iStart, iStep, &pLabel, iNumLabelLines, &mydata.color);
+  g_menuManager.DoIntInput( iMin, iMax, iStart, iStep, &pLabel, iNumLabelLines, &ledConfig[mydata.ledStripToConfigure].color);
 }
-
-
 void setupMenus() {  
   g_menuLCD.MenuLCDSetup();  
   MenuEntry * p_menuEntryRoot;
   p_menuEntryRoot = new MenuEntry((char *)"1. LED Strand ",  (void *) (&mydata.ledStripToConfigure), configureLEDstripOne);  
     g_menuManager.addMenuRoot( p_menuEntryRoot );
-    g_menuManager.addChild( new MenuEntry((char *)"Set Pattern",    (void *) (&mydata.pattern),  SetPattern ));
-    g_menuManager.addChild( new MenuEntry((char *)"Set Speed",      (void *) (&mydata.spd),  SetSpeed ));
-    g_menuManager.addChild( new MenuEntry((char *)"Set Brightness", (void *) (&mydata.bright),  SetBrightness ));
-    g_menuManager.addChild( new MenuEntry((char *)"Set Color",      (void *) (&mydata.color),  SetColor ));
+    g_menuManager.addChild( new MenuEntry((char *)"Set Pattern",    NULL,  SetPattern ));    
+    g_menuManager.addChild( new MenuEntry((char *)"Set Speed",      NULL,  SetSpeed ));
+    g_menuManager.addChild( new MenuEntry((char *)"Set Brightness", NULL,  SetBrightness ));
+    g_menuManager.addChild( new MenuEntry((char *)"Set Color",      NULL,  SetColor ));
     
  
-    g_menuManager.addChild( new MenuEntry((char *)"Turn Strip ON",   (void *) (&mydata.toggleStrand), MenuEntry_BoolTrueCallbackFunc ) );
-    g_menuManager.addChild( new MenuEntry((char *) "Turn Strip OFF",  (void *) (&mydata.toggleStrand), MenuEntry_BoolFalseCallbackFunc ) );
-    g_menuManager.addChild( new MenuEntry((char *) "Reset strand",                               NULL, MenuEntry_BoolFalseCallbackFunc ) );
+    g_menuManager.addChild( new MenuEntry((char *)"Turn Strip ON",    NULL,   MenuEntry_BoolTrueCallbackFunc ) );
+    g_menuManager.addChild( new MenuEntry((char *) "Turn Strip OFF",  NULL,  MenuEntry_BoolFalseCallbackFunc ) );
+    g_menuManager.addChild( new MenuEntry((char *) "Reset strand",    NULL, MenuEntry_BoolFalseCallbackFunc ) );
     g_menuManager.addChild( new MenuEntry((char *) "Back",            (void *)  &g_menuManager,  MenuEntry_BackCallbackFunc) );
 
 g_menuManager.addSibling( new MenuEntry((char *)"2. LED Strand ",   (void *) (&mydata.ledStripToConfigure), configureLEDstripTwo ) );
 g_menuManager.MenuDown();
 
-   // g_menuManager.addChild( new MenuEntry((char *)"Set Pattern",     (void *) (&mydata.pattern),  SetPattern) );
-    g_menuManager.addChild( new MenuEntry((char *)"Set Speed",        (void *) (&mydata.spd),      SetSpeed ));
-    g_menuManager.addChild( new MenuEntry((char *)"Set Brightness",   (void *) (&mydata.bright),   SetBrightness ));
-    g_menuManager.addChild( new MenuEntry((char *)"Set Color",       (void *) (&mydata.color),    SetColor ));
-    g_menuManager.addChild( new MenuEntry((char *) "Turn Strip ON",  NULL,   MenuEntry_BoolTrueCallbackFunc ) );
-    g_menuManager.addChild( new MenuEntry((char *) "Turn Strip OFF", NULL,   MenuEntry_BoolFalseCallbackFunc ) );
-    g_menuManager.addChild( new MenuEntry((char *) "Reset strand",   NULL,   MenuEntry_BoolFalseCallbackFunc ) );
+    g_menuManager.addChild( new MenuEntry((char *)"Set Pattern",      NULL,  SetPattern) );
+    g_menuManager.addChild( new MenuEntry((char *)"Set Speed",        NULL,      SetSpeed ));
+    g_menuManager.addChild( new MenuEntry((char *)"Set Brightness",   NULL,   SetBrightness ));
+    g_menuManager.addChild( new MenuEntry((char *)"Set Color",        NULL,    SetColor ));
+    g_menuManager.addChild( new MenuEntry((char *) "Turn Strip ON",   NULL,   MenuEntry_BoolTrueCallbackFunc ) );
+    g_menuManager.addChild( new MenuEntry((char *) "Turn Strip OFF",  NULL,   MenuEntry_BoolFalseCallbackFunc ) );
+    g_menuManager.addChild( new MenuEntry((char *) "Reset strand",    NULL,   MenuEntry_BoolFalseCallbackFunc ) );
     g_menuManager.addChild( new MenuEntry((char *) "Back",       (void *)  &g_menuManager,   MenuEntry_BackCallbackFunc) );
 
 
 g_menuManager.addSibling( new MenuEntry((char *)"3. LED Strand ",     (void *) (&mydata.ledStripToConfigure) , configureLEDstripThree ) );
 g_menuManager.MenuDown();
- // g_menuManager.addChild( new MenuEntry((char *)"Set Pattern",      (void *) (&mydata.pattern),   SetPattern) );
-  g_menuManager.addChild( new MenuEntry((char *)"Set Speed",                (void *) (&mydata.spd),       SetSpeed ));
-  g_menuManager.addChild( new MenuEntry((char *)"Set Brightness",           (void *) (&mydata.bright),    SetBrightness ));
-  g_menuManager.addChild( new MenuEntry((char *)"Set Color",                (void *) (&mydata.color),     SetColor ));
-  g_menuManager.addChild( new MenuEntry((char *) "Turn Strip ON",  NULL,   MenuEntry_BoolTrueCallbackFunc ) );
-  g_menuManager.addChild( new MenuEntry((char *) "Turn Strip OFF", NULL,   MenuEntry_BoolFalseCallbackFunc ) );
-  g_menuManager.addChild( new MenuEntry((char *) "Reset strand",   NULL,   MenuEntry_BoolFalseCallbackFunc ) );
-  g_menuManager.addChild( new MenuEntry((char *) "Back",       (void *)  &g_menuManager,   MenuEntry_BackCallbackFunc) );
+  g_menuManager.addChild( new MenuEntry((char *)"Set Pattern",             NULL,   SetPattern) );
+  g_menuManager.addChild( new MenuEntry((char *)"Set Speed",               NULL,   SetSpeed ));
+  g_menuManager.addChild( new MenuEntry((char *)"Set Brightness",          NULL,   SetBrightness ));
+  g_menuManager.addChild( new MenuEntry((char *)"Set Color",               NULL,   SetColor ));
+  g_menuManager.addChild( new MenuEntry((char *) "Turn Strip ON",          NULL,   MenuEntry_BoolTrueCallbackFunc ) );
+  g_menuManager.addChild( new MenuEntry((char *) "Turn Strip OFF",         NULL,   MenuEntry_BoolFalseCallbackFunc ) );
+  g_menuManager.addChild( new MenuEntry((char *) "Reset strand",           NULL,   MenuEntry_BoolFalseCallbackFunc ) );
+  g_menuManager.addChild( new MenuEntry((char *) "Back",                   (void *)  &g_menuManager,   MenuEntry_BackCallbackFunc) );
 
 
-g_menuManager.addSibling( new MenuEntry((char *)"Global configuration ",   NULL ,     configureLEDstripAll ) );
+g_menuManager.addSibling( new MenuEntry((char *)"4. LED Strand ",     (void *) (&mydata.ledStripToConfigure) , configureLEDstripFour ) );
+g_menuManager.MenuDown();
+  g_menuManager.addChild( new MenuEntry((char *)"Set Pattern",             NULL,   SetPattern) );
+  g_menuManager.addChild( new MenuEntry((char *)"Set Speed",               NULL,   SetSpeed ));
+  g_menuManager.addChild( new MenuEntry((char *)"Set Brightness",          NULL,   SetBrightness ));
+  g_menuManager.addChild( new MenuEntry((char *)"Set Color",               NULL,   SetColor ));
+  g_menuManager.addChild( new MenuEntry((char *) "Turn Strip ON",          NULL,   MenuEntry_BoolTrueCallbackFunc ) );
+  g_menuManager.addChild( new MenuEntry((char *) "Turn Strip OFF",         NULL,   MenuEntry_BoolFalseCallbackFunc ) );
+  g_menuManager.addChild( new MenuEntry((char *) "Reset strand",           NULL,   MenuEntry_BoolFalseCallbackFunc ) );
+  g_menuManager.addChild( new MenuEntry((char *) "Back",                   (void *)  &g_menuManager,   MenuEntry_BackCallbackFunc) );
+
+
+g_menuManager.addSibling( new MenuEntry((char *)"Global config",    (void *) (&mydata.ledStripToConfigure) ,     configureLEDstripAll ) );
 g_menuManager.MenuDown();
     g_menuManager.addChild( new MenuEntry((char *)"Reset all",             NULL,      SetPattern) );
     g_menuManager.addChild( new MenuEntry((char *)"Global brightness",     NULL,      SetBrightness ));
@@ -257,7 +245,6 @@ void setup() {
   Serial.begin(9600);
   Serial.println("READY");
   
-  // IR remote setup 
   IRrecv irrecv(IR_RECV_PIN);
   irrecv.enableIRIn();
   
@@ -267,7 +254,8 @@ void setup() {
   Wire.begin();
   ET.begin(details(mydata), &Wire);
   randomSeed(analogRead(0));
-  pinMode(13, OUTPUT);
+
+  configureStrands();
 }
 
 
@@ -291,19 +279,6 @@ void loop()  {
    configure_LCD_Menu_via_LEDScreenButtons(readKey); 
 
    if (configUpdated) { 
-     Serial.print("Config updated - sending data.. ");
-     Serial.print("Strip: ");Serial.print(mydata.ledStripToConfigure); 
-     Serial.print(" togle:"); Serial.print(mydata.toggleStrand);
-     Serial.print(" pattern: "); Serial.print(mydata.pattern);
-     Serial.print(" speed: "); Serial.print(mydata.spd);
-     Serial.print(" brigh: "); Serial.print(mydata.bright);
-     Serial.print(" color: "); Serial.print(mydata.color);
-     Serial.println(" ");
-
-    // ledConfig[mydata.ledStripToConfigure].pattern = mydata.pattern;
-
-    
-     
      i2c_send_data_structure();
      configUpdated = false;
    }
@@ -311,26 +286,23 @@ void loop()  {
 
 void i2c_send_data_structure(){
   
-  // copy data between the two data structures ! 
-  // 0) modify the ledConfig with the menu and pointers. 
-  // does ledstrand to configure have to be global ? 
-  ///1) i have to send the myData data structure
-  // 2) before sending, i have to copy all datafrom ledConfig into myData strucutre structure 
-  
-  Serial.println("EasyTransfer SENDING");
-  ET.sendData(I2C_SLAVE_ADDRESS);
+  mydata.toggleStrand = ledConfig[mydata.ledStripToConfigure].toggleStrand;
+  mydata.pattern      = ledConfig[mydata.ledStripToConfigure].pattern;
+  mydata.spd          = ledConfig[mydata.ledStripToConfigure].spd;
+  mydata.bright       = ledConfig[mydata.ledStripToConfigure].bright;
+  mydata.color        = ledConfig[mydata.ledStripToConfigure].color;
 
- // mydata.ledStripToConfigure = g_ledStripToConfigure;
-  mydata.toggleStrand = g_toggleStrand;
-  mydata.pattern = g_pattern;
-  mydata.spd = g_speed;
-  mydata.bright = g_bright;
-  mydata.color = g_color;
-  mydata.blinks =3;
-  mydata.pause =3;
-  
-  Serial.println("DONE");
-  
+   Serial.print("Config updated - sending data.. ");
+   Serial.print("Strip: ");Serial.print(mydata.ledStripToConfigure); 
+     
+   Serial.print(" togle:"); Serial.print(ledConfig[mydata.ledStripToConfigure].toggleStrand);
+   Serial.print(" pattern: "); Serial.print(ledConfig[mydata.ledStripToConfigure].pattern);
+   Serial.print(" speed: "); Serial.print(ledConfig[mydata.ledStripToConfigure].spd);
+   Serial.print(" brigh: "); Serial.print(ledConfig[mydata.ledStripToConfigure].bright);
+   Serial.print(" color: "); Serial.print(ledConfig[mydata.ledStripToConfigure].color);
+   Serial.println(" ");
+
+   ET.sendData(I2C_SLAVE_ADDRESS);
 }
 
 int evaluateKeyPadButton(int x) {
@@ -544,10 +516,28 @@ void configure_LCD_Menu_via_IR_remote (long tmp) {
          g_menuManager.DoMenuAction( MENU_ACTION_SELECT );
       }
       configUpdated = true;
-      break;       
+      break;    
+
+    case 0xE0E016E9: // middle button  
+      if( g_isDisplaying )  {
+         g_isDisplaying = false;
+         g_menuManager.DrawMenu();  
+      } else {
+         g_menuManager.DoMenuAction( MENU_ACTION_SELECT );
+      }
+      configUpdated = true;
+      break;    
+         
   }
 }
 
+void configureStrands(){
+    // configuration of all strips is done in the MASTER 
+  ledConfig[0].pattern = 5;
+  ledConfig[0].spd     = 66;
 
+  ledConfig[1].pattern = 7;
+
+}
 
 
