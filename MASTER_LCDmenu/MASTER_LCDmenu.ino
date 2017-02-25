@@ -33,7 +33,8 @@ const int LCDE  = 9;
 const int LCDRS = 8;
 
 bool configUpdated = false;
-
+bool gSwitch = false;
+bool gConf   = false;
 #define nrLEDStrands 4
 
 
@@ -47,8 +48,9 @@ EasyTransferI2C ET;
 
 struct SEND_DATA_STRUCTURE{
   //THIS MUST BE EXACTLY THE SAME ON THE OTHER ARDUINO
+  bool global;
   int ledStripToConfigure;
-  int toggleStrand;
+  bool toggleStrand;
   int pattern;
   int spd;
   int bright;
@@ -56,7 +58,7 @@ struct SEND_DATA_STRUCTURE{
 } mydata; 
 
 typedef struct{
-  int toggleStrand;
+  bool toggleStrand;
   int pattern;
   int spd;
   int bright;
@@ -65,6 +67,19 @@ typedef struct{
   int pause;
 } struct_ledconf;
 struct_ledconf ledConfig[nrLEDStrands];
+
+struct GLOBAL_CONF {
+  //THIS MUST BE EXACTLY THE SAME ON THE OTHER ARDUINO
+  bool global;
+  int ledStripToConfigure;
+  bool toggleStrand;
+  int pattern;
+  int spd;
+  int bright;
+  int color;
+} global_conf; 
+
+
 
 #define I2C_SLAVE_ADDRESS 9  
 
@@ -256,6 +271,7 @@ void setup() {
   randomSeed(analogRead(0));
 
   configureStrands();
+  i2c_send_init_config();
 }
 
 
@@ -284,24 +300,76 @@ void loop()  {
    }
 }
 
+
+void i2c_send_init_config(){
+   Serial.println("Sending initial configuration to SLAVE LED driver");
+   
+   // send DEFAULT GLOBAL CONFIG 
+     mydata.global              = true;
+     mydata.ledStripToConfigure =  0;     
+     mydata.toggleStrand        =  true;
+     mydata.pattern             =  1;
+     mydata.spd                 =  1;
+     mydata.bright              =  1;
+     mydata.color               =  1;
+     ET.sendData(I2C_SLAVE_ADDRESS);
+     delay(100);
+     
+   for (byte i=0; i < nrLEDStrands; i++){ 
+     Serial.print("Strand:");
+     Serial.println(i);
+     mydata.ledStripToConfigure = i; 
+     mydata.global              = false;   
+     mydata.toggleStrand        = ledConfig[i].toggleStrand;
+     mydata.pattern             = ledConfig[i].pattern;
+     mydata.spd                 = ledConfig[i].spd;
+     mydata.bright              = ledConfig[i].bright;
+     mydata.color               = ledConfig[i].color;
+     ET.sendData(I2C_SLAVE_ADDRESS);
+     delay(100);
+   }
+}
+
 void i2c_send_data_structure(){
   
-  mydata.toggleStrand = ledConfig[mydata.ledStripToConfigure].toggleStrand;
-  mydata.pattern      = ledConfig[mydata.ledStripToConfigure].pattern;
-  mydata.spd          = ledConfig[mydata.ledStripToConfigure].spd;
-  mydata.bright       = ledConfig[mydata.ledStripToConfigure].bright;
-  mydata.color        = ledConfig[mydata.ledStripToConfigure].color;
-
-   Serial.print("Config updated - sending data.. ");
+  if ( gConf  == true ) { 
+   // if somewhere in the code we set / modified the confic which applies to ALL strands
+   mydata.global       = gConf; 
+   mydata.ledStripToConfigure = 0;
+   mydata.toggleStrand = global_conf.toggleStrand;
+   mydata.pattern      = global_conf.pattern;
+   mydata.spd          = global_conf.spd;
+   mydata.bright       = global_conf.bright;
+   mydata.color        = global_conf.color;
+   Serial.print("Globbal config updated - sending data.. ");
    Serial.print("Strip: ");Serial.print(mydata.ledStripToConfigure); 
-     
+   Serial.print(" global: ");Serial.print(mydata.global); 
    Serial.print(" togle:"); Serial.print(ledConfig[mydata.ledStripToConfigure].toggleStrand);
    Serial.print(" pattern: "); Serial.print(ledConfig[mydata.ledStripToConfigure].pattern);
    Serial.print(" speed: "); Serial.print(ledConfig[mydata.ledStripToConfigure].spd);
    Serial.print(" brigh: "); Serial.print(ledConfig[mydata.ledStripToConfigure].bright);
    Serial.print(" color: "); Serial.print(ledConfig[mydata.ledStripToConfigure].color);
    Serial.println(" ");
+   gConf = false;
+     
+  }else {
+   mydata.toggleStrand = ledConfig[mydata.ledStripToConfigure].toggleStrand;
+   mydata.pattern      = ledConfig[mydata.ledStripToConfigure].pattern;
+   mydata.spd          = ledConfig[mydata.ledStripToConfigure].spd;
+   mydata.bright       = ledConfig[mydata.ledStripToConfigure].bright;
+   mydata.color        = ledConfig[mydata.ledStripToConfigure].color;
 
+  
+   Serial.print("Strand specific config updated - sending data.. ");
+   Serial.print("Strip: ");Serial.print(mydata.ledStripToConfigure); 
+   Serial.print(" global: ");Serial.print(mydata.global); 
+   Serial.print(" togle:"); Serial.print(ledConfig[mydata.ledStripToConfigure].toggleStrand);
+   Serial.print(" pattern: "); Serial.print(ledConfig[mydata.ledStripToConfigure].pattern);
+   Serial.print(" speed: "); Serial.print(ledConfig[mydata.ledStripToConfigure].spd);
+   Serial.print(" brigh: "); Serial.print(ledConfig[mydata.ledStripToConfigure].bright);
+   Serial.print(" color: "); Serial.print(ledConfig[mydata.ledStripToConfigure].color);
+   Serial.println(" ");
+  }
    ET.sendData(I2C_SLAVE_ADDRESS);
 }
 
@@ -368,7 +436,7 @@ void configure_LCD_Menu_via_IR_remote (long tmp) {
   switch (tmp) {
 
      case 0xE0E040BF : 
-     // turnAllStrandsOnOff();  
+      turnAllStrandsOnOff();  
       configUpdated = true;
       break;
 
@@ -532,12 +600,50 @@ void configure_LCD_Menu_via_IR_remote (long tmp) {
 }
 
 void configureStrands(){
-    // configuration of all strips is done in the MASTER 
-  ledConfig[0].pattern = 5;
+  // configuration of all strips - config is sent to SLAVE 
+  Serial.println("Configuring default stands");
+  ledConfig[0].pattern = 1;
   ledConfig[0].spd     = 66;
+  ledConfig[0].bright  = 50;
+  
+  ledConfig[1].pattern = 2;
+  ledConfig[1].spd     = 66;
+  ledConfig[1].bright  = 100;
 
-  ledConfig[1].pattern = 7;
+  ledConfig[2].pattern = 3;
+  ledConfig[2].spd     = 66;
+  ledConfig[2].bright  = 150;
+
+  ledConfig[3].pattern = 4;
+  ledConfig[3].spd     = 66;
+  ledConfig[3].bright  = 200;
 
 }
+
+void turnAllStrandsOnOff(){
+  gSwitch = !gSwitch; 
+    gConf = true; 
+  if (gSwitch == true ) {
+    Serial.println("ALL ON");
+    global_conf.global = true;
+    global_conf.toggleStrand = gSwitch;
+    global_conf.ledStripToConfigure = 0; 
+    global_conf.pattern = 0;
+    global_conf.spd = 0;
+    global_conf.bright = 0;
+    global_conf.color = 0;
+    
+  }else {
+    Serial.println("ALL OFF");  
+    global_conf.global = true;
+    global_conf.toggleStrand = gSwitch;
+    global_conf.ledStripToConfigure = 0; 
+    global_conf.pattern = 0;
+    global_conf.spd = 0;
+    global_conf.bright = 0;
+    global_conf.color = 0;
+  }
+}
+
 
 
