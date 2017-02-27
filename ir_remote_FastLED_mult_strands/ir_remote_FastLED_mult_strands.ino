@@ -57,6 +57,12 @@ void configure_stuff (long tmp) {
 
   switch (tmp) {
 
+      /* Questions: 
+          - when user pressess on/off on remote, what do we do ? how do we integretate these functions into 
+            the current layout ? 
+          - do i want to keep the shortcut remote functions : strand on/off | next pattern | prev pattern 
+          - how do i encode Ir global brightness into the sketch ? 
+      */
 
      case 0xE0E040BF : 
       turnAllStrandsOnOff();  
@@ -166,7 +172,7 @@ void loop() {
   while (!irrecv.isIdle());
   
   if (irrecv.decode(&results)) {  
-    configure_stuff(results.value);
+    configure_stuff(results.value);   // calls functions depending on input and sets global variables
     irrecv.resume();
   }
 
@@ -227,7 +233,6 @@ void turnAllStrandsOnOffx() {
 
 }
 
-
 void turnIndStrandOnOff(byte strand) { 
  
  boolean status = strandSwitch[strand];
@@ -267,15 +272,7 @@ void dimStrand(byte strand) {
   //leds[strand][i].setIndividualLedBrightness(brightness);
 }
 
-void fillStrandSolid() {
- Serial.println("Turning Strand RED");
- // executed when pressing "SRC" button. does this work actually ? 
- // because makeAllRed() does not work .. 
- 
- for (byte i = 0; i < NUM_STRIPS; i++ ) { 
-    fill_solid(leds[0], nrLedsPerStrand[0], CRGB::Red);
- }
-}
+
 
 void testStrand() {
     fill_solid(leds[0], nrLedsPerStrand[0], CRGB::Purple);
@@ -294,7 +291,6 @@ void testStrand() {
   }
 }
 
-
 void FillLEDsFromPaletteColors( uint8_t colorIndex, uint8_t spd) {
     uint8_t brightness = 75;
     
@@ -307,7 +303,6 @@ void FillLEDsFromPaletteColors( uint8_t colorIndex, uint8_t spd) {
     }
 }
 
-
 void gbrightnessUp() {
   gBrightness += 17;
   Serial.print("Global brightness UP:");
@@ -315,7 +310,6 @@ void gbrightnessUp() {
   gBrightness += 17;
   FastLED.setBrightness(  gBrightness );
 }
-
 void gbrightnessDown() {
   gBrightness -= 17;
   Serial.print("Global brightness DOWN:");
@@ -349,18 +343,15 @@ void rainbow() {
   gHue[gstrand]++;
   fill_rainbow( leds[gstrand], nrLedsPerStrand[gstrand], gHue[gstrand], 7);
 }
-
 void rainbowWithGlitter() {
   rainbow();
   addGlitter(80);
 }
-
 void fadeToBlack() { 
   for (byte i =0; i < nrLedsPerStrand[gstrand]; i++ ){
     leds[gstrand][i].fadeToBlackBy( 64 );
   }
 }
-
 void addGlitter( fract8 chanceOfGlitter) {
   // create random number between 0-255. this number is smaller than ChanceOfGlitter,
   // then create a random number from 0 to 
@@ -368,21 +359,18 @@ void addGlitter( fract8 chanceOfGlitter) {
     leds[gstrand][ random16(nrLedsPerStrand[gstrand]) ] += CRGB::White;
   }
 }
-
 void confetti(){
   // random colored speckles that blink in and fade smoothly
   fadeToBlackBy( leds[gstrand], nrLedsPerStrand[gstrand], 10);
   int pos = random16(nrLedsPerStrand[gstrand]);
   leds[gstrand][pos] += CHSV( gHue[gstrand] + random8(64), 200, 255);
 }
-
 void sinelon(){
   // a colored dot sweeping back and forth, with fading trails
   fadeToBlackBy( leds[gstrand], nrLedsPerStrand[gstrand], 20);
   int pos = beatsin16(13, 0, nrLedsPerStrand[gstrand]);
   leds[gstrand][pos] += CHSV( gHue[gstrand], 255, 192);
 }
-
 void bpm() {
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
   uint8_t BeatsPerMinute = 62;
@@ -392,7 +380,6 @@ void bpm() {
     leds[gstrand][i] = ColorFromPalette(palette, gHue[gstrand] + (i * 2), beat - gHue[gstrand] + (i * 10));
   }
 }
-
 void juggle() {
   // eight colored dots, weaving in and out of sync with each other
   fadeToBlackBy( leds[gstrand], nrLedsPerStrand[gstrand], 20);
@@ -402,9 +389,18 @@ void juggle() {
     dothue += 32;
   }
 }
-
 void colorAllRed(){
  // Serial.println("colorAllRed");
   fill_solid(leds[gstrand], nrLedsPerStrand[gstrand], CRGB::Red);
+}
+
+void fillStrandSolid() {
+ Serial.println("Turning Strand RED");
+ // executed when pressing "SRC" button. does this work actually ? 
+ // because makeAllRed() does not work .. 
+ 
+ for (byte i = 0; i < NUM_STRIPS; i++ ) { 
+    fill_solid(leds[0], nrLedsPerStrand[0], CRGB::Red);
+ }
 }
 
