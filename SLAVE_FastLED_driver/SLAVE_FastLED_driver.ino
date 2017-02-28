@@ -15,6 +15,8 @@ byte nrLedsPerStrand[NUM_STRIPS]    = {60, 60, 60, 60};
 
 EasyTransferI2C ET;
 
+
+
 // ---- global variables to store data for the PATTERNS
 boolean gSwitch               = true; // global variable to remember current ON/OFF status
 byte    gstrand               = 0;    // global variable to point to current strand.
@@ -28,7 +30,7 @@ byte gPrevPattern[NUM_STRIPS]          = {0,  0, 0 , 0};   // previsous pattern 
 
 struct RECEIVE_DATA_STRUCTURE {
   //THIS MUST BE EXACTLY THE SAME ON THE OTHER ARDUINO
-  bool global;
+  int global;
   int ledStripToConfigure;
   bool toggleStrand;
   int pattern;
@@ -88,13 +90,27 @@ void loop() {
     Serial.println("Data");
     int strip = mydata.ledStripToConfigure;
     
-    if ( mydata.global == 1 ) {
+    if ( mydata.global > 0 ) {
       Serial.println("Handling global configuration");
 
-     // setGlobalPattern(mydata.pattern);
-     // setGlobalBrightness(mydata.bright);
+      switch( mydata.global ) {
+    
+        case 1:   // Turn strand on/off  
+        turnAllStrandsOnOff(mydata.toggleStrand);
+        break;
 
-      turnAllStrandsOnOff(mydata.toggleStrand);
+        case 2:   // brightness
+        setGlobalBrightness(mydata.bright);
+        break;
+        
+      }
+
+          
+     
+
+     // setGlobalPattern(mydata.pattern);
+
+
      
 
 
@@ -159,17 +175,15 @@ void setGlobalBrightness(int gbr) {
 }
 
 
-// NEW
-
 void turnAllStrandsOnOff(int toggle) {
   if (toggle == 0 ) {
     Serial.println("Turning all strands OFF");
     for (byte i = 0; i < NUM_STRIPS; i++ ) {
+      gPrevPattern[i] = ledConfig[i].pattern;
       FastLED[i].clearLeds( nrLedsPerStrand[i]);
-      ledConfig[i].pattern = 0;
+      ledConfig[i].pattern = 6;
       //memset(strandSwitch, 0, sizeof(strandSwitch)); // set all array values to 0
       // FastLED[i].showColor(CRGB::Black, nrLedsPerStrand[i], 0);
-      gPrevPattern[i] = ledConfig[i].pattern;
     }
   } else {
     Serial.println("Turning all stands ON to previous pattern saved");

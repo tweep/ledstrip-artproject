@@ -36,7 +36,7 @@ bool configUpdated = false;
 bool gSwitch = false;
 bool gConf   = false;
 #define nrLEDStrands 4
-
+#define gNrPatterns 6
 
 // IR REMOTE CODE
 #define IR_RECV_PIN    53
@@ -48,7 +48,7 @@ EasyTransferI2C ET;
 
 struct SEND_DATA_STRUCTURE{
   //THIS MUST BE EXACTLY THE SAME ON THE OTHER ARDUINO
-  bool global;
+  int global;
   int ledStripToConfigure;
   bool toggleStrand;
   int pattern;
@@ -70,7 +70,7 @@ struct_ledconf ledConfig[nrLEDStrands];
 
 struct GLOBAL_CONF {
   //THIS MUST BE EXACTLY THE SAME ON THE OTHER ARDUINO
-  bool global;
+  int global;
   int ledStripToConfigure;
   bool toggleStrand;
   int pattern;
@@ -334,7 +334,7 @@ void i2c_send_data_structure(){
   
   if ( gConf  == true ) { 
    // if somewhere in the code we set / modified the confic which applies to ALL strands
-   mydata.global       = gConf; 
+   mydata.global       = global_conf.global; 
    mydata.ledStripToConfigure = 0;
    mydata.toggleStrand = global_conf.toggleStrand;
    mydata.pattern      = global_conf.pattern;
@@ -344,11 +344,11 @@ void i2c_send_data_structure(){
    Serial.print("Globbal config updated - sending data.. ");
    Serial.print("Strip: ");Serial.print(mydata.ledStripToConfigure); 
    Serial.print(" global: ");Serial.print(mydata.global); 
-   Serial.print(" togle:"); Serial.print(ledConfig[mydata.ledStripToConfigure].toggleStrand);
-   Serial.print(" pattern: "); Serial.print(ledConfig[mydata.ledStripToConfigure].pattern);
-   Serial.print(" speed: "); Serial.print(ledConfig[mydata.ledStripToConfigure].spd);
-   Serial.print(" brigh: "); Serial.print(ledConfig[mydata.ledStripToConfigure].bright);
-   Serial.print(" color: "); Serial.print(ledConfig[mydata.ledStripToConfigure].color);
+   Serial.print(" togle:"); Serial.print( mydata.toggleStrand);
+   Serial.print(" pattern: "); Serial.print(mydata.pattern);
+   Serial.print(" speed: "); Serial.print(mydata.spd);
+   Serial.print(" brigh: "); Serial.print(mydata.bright);
+   Serial.print(" color: "); Serial.print(mydata.color);
    Serial.println(" ");
    gConf = false;
      
@@ -449,19 +449,22 @@ void configure_LCD_Menu_via_IR_remote (long tmp) {
       break; 
         
     case 0xE0E020DF : // BUTTON 1 
-     // setNextPatternForStrand(0);
+      setNextPatternForStrand(0);
       configUpdated = true;
       break;
 
-    case 0xE0E0A05F : // BUTTON 2 
-      //turnIndStrandOnOff(0);
+    case 0xE0E0A05F : // BUTTON 2
+      setNextPatternForStrand(1);
       configUpdated = true;
       break;
 
-//     == STRAND 1 ==
+    case 0xE0E0609F : // BUTTON 3
+      setNextPatternForStrand(2);
+      configUpdated = true;
+      break;
 
     case 0xE0E010EF :  // BUTTON 4
-    //  setNextPatternForStrand(1);
+      setNextPatternForStrand(3);
       configUpdated = true;
       break;
 
@@ -500,15 +503,15 @@ void configure_LCD_Menu_via_IR_remote (long tmp) {
       configUpdated = true;
       break;
 
-    case 0xE0E0E01F :
+    case 0xE0E0E01F : 
       //Serial.println("Vol+");
-     // gbrightnessUp();
+      gbrightnessUp();
       configUpdated = true;
       break;
 
    case 0xE0E0D02F :
       //Serial.println("Vol-");
-      // gbrightnessDown();
+      gbrightnessDown();
       configUpdated = true;
       break;
 
@@ -625,7 +628,7 @@ void turnAllStrandsOnOff(){
     gConf = true; 
   if (gSwitch == true ) {
     Serial.println("ALL ON");
-    global_conf.global = true;
+    global_conf.global = 1;   // set to action 1
     global_conf.toggleStrand = gSwitch;
     global_conf.ledStripToConfigure = 0; 
     global_conf.pattern = 0;
@@ -635,7 +638,7 @@ void turnAllStrandsOnOff(){
     
   }else {
     Serial.println("ALL OFF");  
-    global_conf.global = true;
+    global_conf.global = 1;
     global_conf.toggleStrand = gSwitch;
     global_conf.ledStripToConfigure = 0; 
     global_conf.pattern = 0;
@@ -645,5 +648,23 @@ void turnAllStrandsOnOff(){
   }
 }
 
+void gbrightnessUp(){
+   gConf = true; 
+   global_conf.bright+=15;
+   global_conf.global = 2;
+}
 
+void gbrightnessDown(){
+   gConf = true; 
+   global_conf.bright-=15;
+   global_conf.global = 2;
+}
+
+void setNextPatternForStrand(int strand){
+  mydata.ledStripToConfigure = strand;
+  
+  int pat = ledConfig[mydata.ledStripToConfigure].pattern;
+  pat++;
+  ledConfig[mydata.ledStripToConfigure].pattern = pat % gNrPatterns;
+  }
 

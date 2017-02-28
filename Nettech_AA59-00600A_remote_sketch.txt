@@ -8,8 +8,8 @@ Source  -  E0E0807F
 Light   -  OFF  
 
 1   -   E0E020DF     change pattern for strand 0
-2   -   E0E0A05F
-3   -   E0E0609F
+2   -   E0E0A05F     change pattern for strand 1
+3   -   E0E0609F     change pattern for strand 2
 
 
 4   - E0E010EF       change pattern for strand 1
