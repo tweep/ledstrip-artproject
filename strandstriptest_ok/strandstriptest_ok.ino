@@ -3,7 +3,7 @@
   #include <avr/power.h>
 #endif
 
-#define PIN  4
+#define PIN  52
 //#define PIN2 7
 
 //Note: All strips are on PIN 4,5,6 and 7 for the art project.
