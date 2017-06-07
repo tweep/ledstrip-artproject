@@ -26,11 +26,11 @@ PRE-CH  E0E0C837
 
 Vol+    E0E0E01F     change global brightness UP
 Mute    E0E0F00F
-Ch+     E0E048B7 
+Ch+     E0E048B7     globally change all strands to NEXT pattern
 
 Vol-    E0E0D02F     change global brightness DOWN 
 CH Lst  E0E0D629
-Ch -    E0E008F7 
+Ch -    E0E008F7     globally change all strands to PREV pattern
 
 Media-P  E0E031CE 
 Menu     E0E058A7 
