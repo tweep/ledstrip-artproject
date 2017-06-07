@@ -12,7 +12,7 @@ Light   -  OFF
 3   -   E0E0609F     change pattern for strand 2
 
 
-4   - E0E010EF       change pattern for strand 1
+4   - E0E010EF       change pattern for strand 3
 5   - E0E0906F
 6   - E0E050AF
 

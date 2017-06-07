@@ -21,47 +21,39 @@ EasyTransferI2C ET;
 boolean gSwitch               = true; // global variable to remember current ON/OFF status
 byte    gstrand               = 0;    // global variable to point to current strand.
 byte    gHue[NUM_STRIPS]      = {0, 0, 0, 0};  // rotating "base color" used by many of the patterns, so each strip can have different gHue
-byte    stripPatternConfig[NUM_STRIPS] = {0, 0, 0, 0};   // start pattern config: all strands start with pattern 0,0,0,0
-byte gPrevPattern[NUM_STRIPS]          = {0,  0, 0 , 0};   // previsous pattern before turning strand off.
 
-
-// TODO Master: have longer sleep time in setup()
-// send initial configuration to SLAVE - this should be done in MASTER.setup()
+// TODO Master: have longer sleep timer in setup()
+// sleep timer - to turn LED off after 60 min.
 
 struct RECEIVE_DATA_STRUCTURE {
   //THIS MUST BE EXACTLY THE SAME ON THE OTHER ARDUINO
-  int global;
   int ledStripToConfigure;
-  bool toggleStrand;
   int pattern;
   int spd;
   int bright;
   int color;
-};
-RECEIVE_DATA_STRUCTURE mydata;
+} mydata;
 
-typedef struct {    // Structure to hold the configuration of each strand
-  bool toggleStrand;
+typedef struct {    // Structure to hold a copy of the configuration of each strand
   int pattern;
   int spd;
   int bright;
   int color;
-  int blinks;
-  int pause;
 } struct_ledconf;
 struct_ledconf ledConfig[NUM_STRIPS];
 
+CLEDController *controllers[NUM_STRIPS];
 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   // -------- FASTLED strand setup --------
 
-  FastLED.addLeds<WS2811, 4, GRB>(leds[0], nrLedsPerStrand[0]).setCorrection(TypicalLEDStrip);
-  FastLED.addLeds<WS2811, 5, GRB>(leds[1], nrLedsPerStrand[1]).setCorrection(TypicalLEDStrip);
-  FastLED.addLeds<WS2811, 6, GRB>(leds[2], nrLedsPerStrand[2]).setCorrection(TypicalLEDStrip);
-  FastLED.addLeds<WS2811, 7, GRB>(leds[3], nrLedsPerStrand[3]).setCorrection(TypicalLEDStrip);
+  controllers[0] = &FastLED.addLeds<WS2811, 4, GRB>(leds[0], nrLedsPerStrand[0]).setCorrection(TypicalLEDStrip);
+  controllers[1] = &FastLED.addLeds<WS2811, 5, GRB>(leds[1], nrLedsPerStrand[1]).setCorrection(TypicalLEDStrip);
+  controllers[2] = &FastLED.addLeds<WS2811, 6, GRB>(leds[2], nrLedsPerStrand[2]).setCorrection(TypicalLEDStrip);
+  controllers[3] = &FastLED.addLeds<WS2811, 7, GRB>(leds[3], nrLedsPerStrand[3]).setCorrection(TypicalLEDStrip);
 
   for ( int j = 0; j < NUM_STRIPS; j++ ) {
     FastLED[j].showLeds(128); // set initial brightness of strip
@@ -74,6 +66,7 @@ void setup() {
   //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc.
   ET.begin(details(mydata), &Wire);
   Wire.onReceive(receive);   //define handler function on receiving data
+  Serial.println("Ready to receive data");
 }
 
 
@@ -86,140 +79,38 @@ SimplePatternList gPatterns = { rainbow, rainbowWithGlitter, confetti, sinelon, 
 void loop() {
   
   if (ET.receiveData()) {
-    // Store the retrieved configuration for each strand
-    Serial.println("Data");
-    int strip = mydata.ledStripToConfigure;
-    
-    if ( mydata.global > 0 ) {
-      Serial.println("Handling global configuration");
-
-      switch( mydata.global ) {
-    
-        case 1:   // Turn strand on/off  
-        turnAllStrandsOnOff(mydata.toggleStrand);
-        break;
-
-        case 2:   // brightness
-        setGlobalBrightness(mydata.bright);
-        break;
-        
-      }
-
-          
-     
-
-     // setGlobalPattern(mydata.pattern);
-
-
-     
-
-
-    } else {
-      // configure a specific strand only.
-      ledConfig[strip].toggleStrand = mydata.toggleStrand;
+      int strip = mydata.ledStripToConfigure;
       ledConfig[strip].pattern      = mydata.pattern;
       ledConfig[strip].spd          = mydata.spd;
       ledConfig[strip].bright       = mydata.bright;
       ledConfig[strip].color        = mydata.color;
-    }
-    if(mydata.toggleStrand == false){
-       // set pattern fadeToDark for this strand 
-    } 
-    
-    Serial.println("Retrieving data...");
-    Serial.print("Strip: "); Serial.print(mydata.ledStripToConfigure);
 
-    Serial.print("global: "); Serial.print(mydata.global);
-    Serial.print(" togle:"); Serial.print(mydata.toggleStrand);
-    Serial.print(" theme: "); Serial.print(mydata.pattern);
-    Serial.print(" speed: "); Serial.print(mydata.spd);
-    Serial.print(" brigh: "); Serial.print(mydata.bright);
-    Serial.print(" color: "); Serial.print(mydata.color);
-    Serial.println(" ");
-    // routine which configures the specific strip: speed, pattern, brightness, on/off
-    // routine which configures ALL strips: off/on, global brightness, ...
+     controllers[strip]->showLeds(ledConfig[strip].bright);
+    
+     Serial.println("Retrieving data...");
+     Serial.print("Strip: "); Serial.print(mydata.ledStripToConfigure);
+     Serial.print(" pattern: "); Serial.print(mydata.pattern);
+     Serial.print(" speed: "); Serial.print(mydata.spd);
+     Serial.print(" brigh: "); Serial.print(mydata.bright);
+     Serial.print(" color: "); Serial.print(mydata.color);
+     Serial.println(" ");
+
   }
 
 
   for (byte i = 0; i < NUM_STRIPS ; i++ ) {
     gstrand = i; // global index to point to current strand. used in the subroutines which do patterns.
     // the challenge is that we can't had this parameter over to the routine itself.
-    // gPatterns[stripPatternConfig[i]]();
     gPatterns[ledConfig[i].pattern]();
+    controllers[i]->showLeds(ledConfig[i].bright);
   }
 
-  if ( gSwitch == true ) {  // turn ALL strands on/off. how to read this out of the mydata which is sent ?
-    //                          mydata[0].globalSwitch = 0
-    //                          mydata[1].globalSwitch = 1   // only use strand 0 for global config values ?
- // if (ledConfig[0].globalSwitch == true ){
-    FastLED.show();
-  }
-  // check if value for strand changed and turn indv stand on/off
-  // check if value for starnd changed and dim strand
-  delay(10);
+   delay(3);
 }
 
 void receive(int numBytes) {
   }
 
-
-
-void setGlobalPattern( int pat) {
-  for (byte i = 0; i < NUM_STRIPS ; i++ ) {
-    ledConfig[i].pattern = pat;
-  }
-}
-
-void setGlobalBrightness(int gbr) {
-  FastLED.setBrightness( gbr );
-}
-
-
-void turnAllStrandsOnOff(int toggle) {
-  if (toggle == 0 ) {
-    Serial.println("Turning all strands OFF");
-    for (byte i = 0; i < NUM_STRIPS; i++ ) {
-      gPrevPattern[i] = ledConfig[i].pattern;
-      FastLED[i].clearLeds( nrLedsPerStrand[i]);
-      ledConfig[i].pattern = 6;
-      //memset(strandSwitch, 0, sizeof(strandSwitch)); // set all array values to 0
-      // FastLED[i].showColor(CRGB::Black, nrLedsPerStrand[i], 0);
-    }
-  } else {
-    Serial.println("Turning all stands ON to previous pattern saved");
-    for (byte i = 0; i < NUM_STRIPS; i++ ) {
-      ledConfig[i].pattern = gPrevPattern[i];
-    }
-  }
-}
-
-void turnIndStrandOnOff(byte strand) {
-
-  int status = ledConfig[strand].toggleStrand;
-
-  if ( status == 1) {
-    // If the strand is ON, turn it off.
-    gPrevPattern[strand] = stripPatternConfig[strand]; // Store current pattern of strand
-
-    Serial.print("Turning strand OFF:");
-    Serial.println(strand);
-    Serial.print("Previous pattern:");
-    Serial.println(gPrevPattern[strand]);
-
-    // set new pattern [OFF pattern] as Nr.6 for strip = fadeToBlack
-    stripPatternConfig[strand] = 6;
-    ledConfig[strand].toggleStrand = true;
-  } else {
-
-    Serial.print("Turing strand ON:");
-    Serial.println(strand);
-    Serial.print("Recovering + setting previous pattern:");
-    Serial.println(gPrevPattern[strand]);
-
-    stripPatternConfig[strand] = gPrevPattern[strand];
-    ledConfig[strand].toggleStrand = true;
-  }
-}
 
 // ------------ FASTLed patterns --------
 
