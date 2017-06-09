@@ -8,6 +8,15 @@ Here's the final installation - you fine some pictures if you scroll down, or lo
 
 ![Final installation](https://github.com/tweep/ledstrip-artproject/blob/master/pics/rainbow_mode.jpg) 
 
+## What i could have done better
+- every plywood sheet should have had a SINGLE connector to connect to the MAIN sheet with 
+  the microcontrollers. Currently I have one centralized place where all connects - so taking the 
+  whole piece apart is a big mess as i have to disconnect 36 connectors and loose all the pin-layout. 
+  Not good. Next time, one central connector per Plywood sheet, with a single cable running to 
+  the microcontroller. Not 1000's of cables. it's also easer to build as you can measure the
+  length of the cables better. 
+- do the edges in an angled fashion so it looks more like "floating" / cut the sides in angles
+  where the top plywood is smaller than the one below, than the one below, than the one below...
 
 ## Notes 
 Here are some good reads on colors and color theory: 
@@ -16,6 +25,23 @@ Here are some good reads on colors and color theory:
 [Hue angle transitions](http://rileyjshaw.com/blog/hue-angle-transitions/)
 
 I created a nice color transition in [JSfiddle](https://jsfiddle.net/user/vogelj/).
+
+## Stuff needed 
+- thin pywood sheets ( 5mm think so it's not too heavy 
+  ( home depot, cut the 8x4 sheets into 4 x 4 squares ) 
+- 2 x Arduino Mega 2560 
+- LED strips WS2812B 5V
+- Power supply : I ordered a fan-less Mean Well HSN 300 watts 5V supply. 
+  (That's 60 Amps - I went a little over the top as i did not now at the start 
+   how many LEDs I have to power. I used 700 LEDS which need  42 Amps max. 
+  [Power supply](http://www.trcelectronics.com/View/Mean-Well/HSN-300-5A.shtml)
+- JST connectors and 3-cables from Amazon
+- Soldering iron 
+- Solder - Mandala Crafts 60 40 0.6mm 0.8mm 1mm 1.5mm 2% Flux Rosin Core Solder Wire (50g, 60 40, 0.8mm)
+  https://www.amazon.com/dp/B06XX27KZ1/
+
+
+
 
 
 ## Libraries /  Software / Dependencies
