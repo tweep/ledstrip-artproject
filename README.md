@@ -30,17 +30,27 @@ I'm using the FastLED library to drive my WS2812B 5V LED strips which have indiv
 ## Project status and files 
 After realizing that there are some timing problems when using the FastLed library together with an IR-remote (the FastLed library turns all interrrupts off), I decided to use 2 Arduino boards for the project: 
 
- 1.  1 x Arduino MEGA which controls the FastLED patterns and strands   
+
+ 1.  1 x Arduino MEGA to drive the User interface ( the MASTER) 
+ * LCD display with keypad 
+ * Menu structure on LCD 
+ * IR receiver to remote control the same menu with an IR remote 
+ * uses EasyTransfer library to send data via I2C to the Arduino Mega  
+
+
+ 2.  1 x Arduino MEGA which controls the FastLED patterns and strands (the SLAVE)
  * uses FastLED library to drive the strands 
  * EasyTransfer library to receive data via I2C from the Arduino Uno menu / UI and translate them into 
    visible patterns
  * code for patterns, transitions, and FastLED configuration 
+ * I'm driving 700 LEDS distributed over 36 strands. Each strand has a differnt number of LEDs; 
+   this was a bit of a challenge as the 'usual' way of using a two-dimensional array for all LEDS 
+   eats up too much memory. 
+   I had to modfify the FastLED library to add some methods which allow me to work with a different 
+   data structure.
 
- 2.  1 x Arduino UNO to drive the User interface: 
- * LCD display with keypad 
- * Menu structure on LCD 
- * IR receiver to remote control the same menu with an IR remote 
- * EasyTransfer library to send data via I2C to the Arduino Mega 
+
+## Code  
 
 
 ## Code Stages 
