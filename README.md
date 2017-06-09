@@ -49,7 +49,9 @@ After realizing that there are some timing problems when using the FastLed libra
    I had to modfify the FastLED library to add some methods which allow me to work with a different 
    data structure.
 
-
+## Todo 
+- switch to differnt IR library ( see [example](./irlib2_remote_fastled_example)
+- 
 ## Code  
 
 
