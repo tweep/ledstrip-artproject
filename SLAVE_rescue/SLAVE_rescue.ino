@@ -45,7 +45,7 @@ CRGB leds[774]; // one-dimensional array, better memory use.
 
                    //        STRAND    S0  S1  S2  S3  S4 -  5   6   7   8   9  -  10  11  12  13  14 -  15  16  17  18  19 - 20  21  22  23  24  - 25  26  27  28  29 - 30  31  32  33  34  35
 byte nrLedsPerStrand[NUM_STRIPS]    = {13, 21, 46, 31, 12,  10, 11, 14, 19, 17,    12,  5, 90, 75, 60,   28, 15,  7, 12, 27,  14, 36, 15, 19, 14,   12, 12, 14, 41, 14,   8,  6,  8,  9, 12, 15 };
-byte strandPins[NUM_STRIPS]         = {47, 32, 49,  5, 34,  31,  2,  3,  8,  7,    24, 23,  6, 12,  4,   35, 51,  22,36, 25,  11, 45, 43, 44, 27,   53, 50, 48, 10, 13,  52, 46,  9, 26, 28, 29 };
+//byte stripPin[NUM_STRIPS]           = {47, 32, 49,  5, 34,  31,  2,  3,  8,  7,    24, 23,  6, 12,  4,   35, 51,  22,36, 25,  11, 45, 43, 44, 27,   53, 50, 48, 10, 13,  52, 46,  9, 26, 28, 29 };
 
 
 
@@ -83,59 +83,69 @@ CLEDController *controllers[NUM_STRIPS];
 void setup() {
   Serial.begin(115200);
 
+  controllers[0] = &FastLED.addLeds<WS2812B, 47>(leds, getOffsetOfStrand(0), nrLedsPerStrand[0]).setCorrection(TypicalLEDStrip);
+  controllers[1] = &FastLED.addLeds<WS2812B, 32>(leds, getOffsetOfStrand(1), nrLedsPerStrand[1]).setCorrection(TypicalLEDStrip);
+  controllers[2] = &FastLED.addLeds<WS2812B, 49>(leds, getOffsetOfStrand(2), nrLedsPerStrand[2]).setCorrection(TypicalLEDStrip);
+  controllers[3] = &FastLED.addLeds<WS2812B,  5>(leds, getOffsetOfStrand(3), nrLedsPerStrand[3]).setCorrection(TypicalLEDStrip);
+  controllers[4] = &FastLED.addLeds<WS2812B, 34>(leds, getOffsetOfStrand(4), nrLedsPerStrand[4]).setCorrection(TypicalLEDStrip);
+
+  controllers[5] = &FastLED.addLeds<WS2812B, 31, GRB>(leds,getOffsetOfStrand(5),nrLedsPerStrand[5]).setCorrection(TypicalLEDStrip);
+  controllers[6] = &FastLED.addLeds<WS2812B,  2, GRB>(leds,getOffsetOfStrand(6),nrLedsPerStrand[6]).setCorrection(TypicalLEDStrip);
+  controllers[7] = &FastLED.addLeds<WS2812B,  3, GRB>(leds,getOffsetOfStrand(7),nrLedsPerStrand[7]).setCorrection(TypicalLEDStrip);
+  controllers[8] = &FastLED.addLeds<WS2812B,  8, GRB>(leds,getOffsetOfStrand(8),nrLedsPerStrand[8]).setCorrection(TypicalLEDStrip);
+  controllers[9] = &FastLED.addLeds<WS2812B,  7, GRB>(leds,getOffsetOfStrand(9),nrLedsPerStrand[9]).setCorrection(TypicalLEDStrip);
+
+  controllers[10] = &FastLED.addLeds<WS2812B, 24, GRB>(leds,getOffsetOfStrand(10),nrLedsPerStrand[10]).setCorrection(TypicalLEDStrip);
+  controllers[11] = &FastLED.addLeds<WS2812B, 23, GRB>(leds,getOffsetOfStrand(11),nrLedsPerStrand[11]).setCorrection(TypicalLEDStrip);
+  controllers[12] = &FastLED.addLeds<WS2812B,  6, GRB>(leds,getOffsetOfStrand(12),nrLedsPerStrand[12]).setCorrection(TypicalLEDStrip);
+  controllers[13] = &FastLED.addLeds<WS2812B, 12, GRB>(leds,getOffsetOfStrand(13),nrLedsPerStrand[13]).setCorrection(TypicalLEDStrip);
+  controllers[14] = &FastLED.addLeds<WS2812B,  4, GRB>(leds,getOffsetOfStrand(14),nrLedsPerStrand[14]).setCorrection(TypicalLEDStrip);
+
+  controllers[15] = &FastLED.addLeds<WS2812B, 35, GRB>(leds,getOffsetOfStrand(15),nrLedsPerStrand[15]).setCorrection(TypicalLEDStrip);
+  controllers[16] = &FastLED.addLeds<WS2812B, 51, GRB>(leds,getOffsetOfStrand(16),nrLedsPerStrand[16]).setCorrection(TypicalLEDStrip);
+  controllers[17] = &FastLED.addLeds<WS2812B, 22, GRB>(leds,getOffsetOfStrand(17),nrLedsPerStrand[17]).setCorrection(TypicalLEDStrip);
+  controllers[18] = &FastLED.addLeds<WS2812B, 36, GRB>(leds,getOffsetOfStrand(18),nrLedsPerStrand[18]).setCorrection(TypicalLEDStrip);
+  controllers[19] = &FastLED.addLeds<WS2812B, 25, GRB>(leds,getOffsetOfStrand(19),nrLedsPerStrand[19]).setCorrection(TypicalLEDStrip);
 
 
-  controllers[0] = &FastLED.addLeds<NEOPIXEL, 47>(leds, getOffsetOfStrand(0), nrLedsPerStrand[0]).setCorrection(TypicalLEDStrip);
-  controllers[1] = &FastLED.addLeds<NEOPIXEL, 32>(leds, getOffsetOfStrand(1), nrLedsPerStrand[1]).setCorrection(TypicalLEDStrip);
-  controllers[2] = &FastLED.addLeds<NEOPIXEL, 49>(leds, getOffsetOfStrand(2), nrLedsPerStrand[2]).setCorrection(TypicalLEDStrip);
-  controllers[3] = &FastLED.addLeds<NEOPIXEL,  5>(leds, getOffsetOfStrand(3), nrLedsPerStrand[3]).setCorrection(TypicalLEDStrip);
-  controllers[4] = &FastLED.addLeds<NEOPIXEL, 34>(leds, getOffsetOfStrand(4), nrLedsPerStrand[4]).setCorrection(TypicalLEDStrip);
-
-  controllers[5] = &FastLED.addLeds<WS2811, 31, GRB>(leds,getOffsetOfStrand(5),nrLedsPerStrand[5]).setCorrection(TypicalLEDStrip);
-  controllers[6] = &FastLED.addLeds<WS2811,  2, GRB>(leds,getOffsetOfStrand(6),nrLedsPerStrand[6]).setCorrection(TypicalLEDStrip);
-  controllers[7] = &FastLED.addLeds<WS2811,  3, GRB>(leds,getOffsetOfStrand(7),nrLedsPerStrand[7]).setCorrection(TypicalLEDStrip);
-  controllers[8] = &FastLED.addLeds<WS2811,  8, GRB>(leds,getOffsetOfStrand(8),nrLedsPerStrand[8]).setCorrection(TypicalLEDStrip);
-  controllers[9] = &FastLED.addLeds<WS2811,  7, GRB>(leds,getOffsetOfStrand(9),nrLedsPerStrand[9]).setCorrection(TypicalLEDStrip);
-
-  controllers[10] = &FastLED.addLeds<WS2811, 24, GRB>(leds,getOffsetOfStrand(10),nrLedsPerStrand[10]).setCorrection(TypicalLEDStrip);
-  controllers[11] = &FastLED.addLeds<WS2811, 23, GRB>(leds,getOffsetOfStrand(11),nrLedsPerStrand[11]).setCorrection(TypicalLEDStrip);
-  controllers[12] = &FastLED.addLeds<WS2811,  6, GRB>(leds,getOffsetOfStrand(12),nrLedsPerStrand[12]).setCorrection(TypicalLEDStrip);
-  controllers[13] = &FastLED.addLeds<WS2811, 12, GRB>(leds,getOffsetOfStrand(13),nrLedsPerStrand[13]).setCorrection(TypicalLEDStrip);
-  controllers[14] = &FastLED.addLeds<WS2811,  4, GRB>(leds,getOffsetOfStrand(14),nrLedsPerStrand[14]).setCorrection(TypicalLEDStrip);
-
-  controllers[15] = &FastLED.addLeds<WS2811, 35, GRB>(leds,getOffsetOfStrand(15),nrLedsPerStrand[15]).setCorrection(TypicalLEDStrip);
-  controllers[16] = &FastLED.addLeds<WS2811, 51, GRB>(leds,getOffsetOfStrand(16),nrLedsPerStrand[16]).setCorrection(TypicalLEDStrip);
-  controllers[17] = &FastLED.addLeds<WS2811, 22, GRB>(leds,getOffsetOfStrand(17),nrLedsPerStrand[17]).setCorrection(TypicalLEDStrip);
-  controllers[18] = &FastLED.addLeds<WS2811, 36, GRB>(leds,getOffsetOfStrand(18),nrLedsPerStrand[18]).setCorrection(TypicalLEDStrip);
-  controllers[19] = &FastLED.addLeds<WS2811, 25, GRB>(leds,getOffsetOfStrand(19),nrLedsPerStrand[19]).setCorrection(TypicalLEDStrip);
-
-
-  controllers[20] = &FastLED.addLeds<WS2811, 11, GRB>(leds,getOffsetOfStrand(20),nrLedsPerStrand[20]).setCorrection(TypicalLEDStrip);
-  controllers[21] = &FastLED.addLeds<WS2811, 45, GRB>(leds,getOffsetOfStrand(21),nrLedsPerStrand[21]).setCorrection(TypicalLEDStrip);
-  controllers[22] = &FastLED.addLeds<WS2811, 43, GRB>(leds,getOffsetOfStrand(22),nrLedsPerStrand[22]).setCorrection(TypicalLEDStrip);
-  controllers[23] = &FastLED.addLeds<WS2811, 44, GRB>(leds,getOffsetOfStrand(23),nrLedsPerStrand[23]).setCorrection(TypicalLEDStrip);
-  controllers[24] = &FastLED.addLeds<WS2811, 27, GRB>(leds,getOffsetOfStrand(24),nrLedsPerStrand[24]).setCorrection(TypicalLEDStrip);
+  controllers[20] = &FastLED.addLeds<WS2812B, 11, GRB>(leds,getOffsetOfStrand(20),nrLedsPerStrand[20]).setCorrection(TypicalLEDStrip);
+  controllers[21] = &FastLED.addLeds<WS2812B, 45, GRB>(leds,getOffsetOfStrand(21),nrLedsPerStrand[21]).setCorrection(TypicalLEDStrip);
+  controllers[22] = &FastLED.addLeds<WS2812B, 43, GRB>(leds,getOffsetOfStrand(22),nrLedsPerStrand[22]).setCorrection(TypicalLEDStrip);
+  controllers[23] = &FastLED.addLeds<WS2812B, 44, GRB>(leds,getOffsetOfStrand(23),nrLedsPerStrand[23]).setCorrection(TypicalLEDStrip);
+  controllers[24] = &FastLED.addLeds<WS2812B, 27, GRB>(leds,getOffsetOfStrand(24),nrLedsPerStrand[24]).setCorrection(TypicalLEDStrip);
 
   
-  controllers[25] = &FastLED.addLeds<WS2811, 53, GRB>(leds,getOffsetOfStrand(25),nrLedsPerStrand[25]).setCorrection(TypicalLEDStrip);
-  controllers[26] = &FastLED.addLeds<WS2811, 50, GRB>(leds,getOffsetOfStrand(26),nrLedsPerStrand[26]).setCorrection(TypicalLEDStrip);
-  controllers[27] = &FastLED.addLeds<WS2811, 48, GRB>(leds,getOffsetOfStrand(27),nrLedsPerStrand[27]).setCorrection(TypicalLEDStrip);
-  controllers[28] = &FastLED.addLeds<WS2811, 10, GRB>(leds,getOffsetOfStrand(28),nrLedsPerStrand[28]).setCorrection(TypicalLEDStrip);
-  controllers[29] = &FastLED.addLeds<WS2811, 13, GRB>(leds,getOffsetOfStrand(29),nrLedsPerStrand[29]).setCorrection(TypicalLEDStrip);
+  controllers[25] = &FastLED.addLeds<WS2812B, 53, GRB>(leds,getOffsetOfStrand(25),nrLedsPerStrand[25]).setCorrection(TypicalLEDStrip);
+  controllers[26] = &FastLED.addLeds<WS2812B, 50, GRB>(leds,getOffsetOfStrand(26),nrLedsPerStrand[26]).setCorrection(TypicalLEDStrip);
+  controllers[27] = &FastLED.addLeds<WS2812B, 48, GRB>(leds,getOffsetOfStrand(27),nrLedsPerStrand[27]).setCorrection(TypicalLEDStrip);
+  controllers[28] = &FastLED.addLeds<WS2812B, 10, GRB>(leds,getOffsetOfStrand(28),nrLedsPerStrand[28]).setCorrection(TypicalLEDStrip);
+  controllers[29] = &FastLED.addLeds<WS2812B, 13, GRB>(leds,getOffsetOfStrand(29),nrLedsPerStrand[29]).setCorrection(TypicalLEDStrip);
   
-  controllers[30] = &FastLED.addLeds<WS2811, 52, GRB>(leds,getOffsetOfStrand(30),nrLedsPerStrand[30]).setCorrection(TypicalLEDStrip);
-  controllers[31] = &FastLED.addLeds<WS2811, 46, GRB>(leds,getOffsetOfStrand(31),nrLedsPerStrand[31]).setCorrection(TypicalLEDStrip);
-  controllers[32] = &FastLED.addLeds<WS2811,  9, GRB>(leds,getOffsetOfStrand(32),nrLedsPerStrand[32]).setCorrection(TypicalLEDStrip);
-  controllers[33] = &FastLED.addLeds<WS2811, 26, GRB>(leds,getOffsetOfStrand(33),nrLedsPerStrand[33]).setCorrection(TypicalLEDStrip);
-  controllers[34] = &FastLED.addLeds<WS2811, 28, GRB>(leds,getOffsetOfStrand(34),nrLedsPerStrand[34]).setCorrection(TypicalLEDStrip);
+  controllers[30] = &FastLED.addLeds<WS2812B, 52, GRB>(leds,getOffsetOfStrand(30),nrLedsPerStrand[30]).setCorrection(TypicalLEDStrip);
+  controllers[31] = &FastLED.addLeds<WS2812B, 46, GRB>(leds,getOffsetOfStrand(31),nrLedsPerStrand[31]).setCorrection(TypicalLEDStrip);
+  controllers[32] = &FastLED.addLeds<WS2812B,  9, GRB>(leds,getOffsetOfStrand(32),nrLedsPerStrand[32]).setCorrection(TypicalLEDStrip);
+  controllers[33] = &FastLED.addLeds<WS2812B, 26, GRB>(leds,getOffsetOfStrand(33),nrLedsPerStrand[33]).setCorrection(TypicalLEDStrip);
+  controllers[34] = &FastLED.addLeds<WS2812B, 28, GRB>(leds,getOffsetOfStrand(34),nrLedsPerStrand[34]).setCorrection(TypicalLEDStrip);
 
-  controllers[35] = &FastLED.addLeds<WS2811, 29, GRB>(leds,getOffsetOfStrand(35),nrLedsPerStrand[35]).setCorrection(TypicalLEDStrip);
-
+  controllers[35] = &FastLED.addLeds<WS2812B, 29, GRB>(leds,getOffsetOfStrand(35),nrLedsPerStrand[35]).setCorrection(TypicalLEDStrip);
 
 
   for ( int j = 0; j < NUM_STRIPS; j++ ) {
+    Serial.print("Strip"); 
+    Serial.println(j); 
     FastLED[j].showLeds(128); // set initial brightness of strip
     FastLED.show();
+    gstrand=j;
+    colorStripBlack();
+    delay(400);
+
+    // set very initial config 
+      ledConfig[j].pattern      = 6;
+      ledConfig[j].spd          = 0;
+      ledConfig[j].bright       = 0;
+      ledConfig[j].color        = 0;
+
+    
   }
 
   // -------- EasyTransfer --------
@@ -286,14 +296,10 @@ void colorStripRed() {
   int offset = getOffsetOfStrand(gstrand);
   fill_solid(leds, offset, nrLedsPerStrand[gstrand], CRGB::Red);
 }
-
-
-int numberOfALLLEDs (int * array, int len) {  
-  int sum = 0;
-  for (int i = 0 ; i < len ; i++) {
-    sum += array [i] ;
-  }
-  return sum ;
+    
+void colorStripBlack() {
+  int offset = getOffsetOfStrand(gstrand);
+  fill_solid(leds, offset, nrLedsPerStrand[gstrand], CRGB::Blue);
 }
 
 
