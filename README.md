@@ -2,30 +2,30 @@
 # Ledstrip Art project 
 This project aims to make an LED art installation of the Vasily Kadinsky "einige kreise" picture - see pictures below. 
 The installation will be driven by 2 Arduino Mega 2560's ( one for the LEDs, one for a remote control ); each colored 
-circle can change color independently. 
+circle can change color independently.  
 
-
-![Kadinsky picture](./pics/kadinsky.jpg) 
+Here's the final installation - you fine some pictures if you scroll down, or look [here](./pics/)
 
 ![Final installation](https://github.com/tweep/ledstrip-artproject/blob/master/pics/rainbow_mode.jpg) 
 
-![Daylight](https://github.com/tweep/ledstrip-artproject/blob/master/pics/plywood_cut_4_layers.jpg) 
 
-More pictures can be found [here](./pics/plywood_cut_4_layers.jpg) 
+## Notes 
+Here are some good reads on colors and color theory: 
 
-Good reads on colors , perception and color theory : 
+[The color wheel](https://blog.asmartbear.com/color-wheels.html) 
+[Hue angle transitions](http://rileyjshaw.com/blog/hue-angle-transitions/)
 
-https://blog.asmartbear.com/color-wheels.html 
-
-http://rileyjshaw.com/blog/hue-angle-transitions/
-
-
-A color transition in JSfiddle: https://jsfiddle.net/user/vogelj/   
+I created a nice color transition in [JSfiddle](https://jsfiddle.net/user/vogelj/).
 
 
-## Libraries /  Software / Dependencies 
-- FastLED 
-- Infrared library ( currently: IRemote, as IRlib2 has conflicts with interrupts) 
+## Libraries /  Software / Dependencies
+I'm using the FastLED library to drive my WS2812B 5V LED strips which have individually addressable LEDs. I bought them online. 
+ 
+- [Arduino FastLED library](https://github.com/FastLED/FastLED)
+- Infrared library ( currently used: : IRemote. I like to switch to the IRlib2 later. It has conflicts with the interrupts used by FastLED, 
+  so I decided to use 2 Arduinos: one to deal with the remote and the LCD display, and one which drives the LEDs.
+- [Easytransfer_I2C](has://github.com/madsci1016/Arduino-EasyTransfer) - to communicate between 2 Arduinos via Serial interface 
+
 
 ## Project status and files 
 After realizing that there are some timing problems when using the FastLed library together with an IR-remote (the FastLed library turns all interrrupts off), I decided to use 2 Arduino boards for the project: 
@@ -84,3 +84,13 @@ This example uses the following libraries:
 - switch all strands on / off 
 - control brightness of all strands with single button  
 - change the strand themes individually per strand 
+
+
+![Kadinsky picture](./pics/kadinsky.jpg) 
+
+![Final installation](https://github.com/tweep/ledstrip-artproject/blob/master/pics/rainbow_mode.jpg) 
+
+![Daylight](https://github.com/tweep/ledstrip-artproject/blob/master/pics/plywood_cut_4_layers.jpg) 
+
+More pictures can be found [here](./pics/.jpg) 
+
