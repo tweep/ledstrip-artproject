@@ -3,6 +3,10 @@
 This project aims to make an LED art installation of the Vasily Kadinsky "einige kreise" picture
 
 
+![Kadinsky picture](https://github.com/tweep/ledstrip-artproject/blob/master/pics/kadinsky.jpg) 
+
+
+
 Good reads on colors , perception and color theory : 
 
 https://blog.asmartbear.com/color-wheels.html 
