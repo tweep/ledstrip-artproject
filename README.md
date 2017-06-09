@@ -50,7 +50,7 @@ After realizing that there are some timing problems when using the FastLed libra
    data structure.
 
 ## Todo 
-- switch to differnt IR library ( see [example](./irlib2_remote_fastled_example)
+- switch to differnt IR library ( see [example](./EXAMPLE_irlib2_remote_fastled)
 - 
 ## Code  
 
