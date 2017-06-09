@@ -1,11 +1,17 @@
 
 # Ledstrip Art project 
-This project aims to make an LED art installation of the Vasily Kadinsky "einige kreise" picture
+This project aims to make an LED art installation of the Vasily Kadinsky "einige kreise" picture - see pictures below. 
+The installation will be driven by 2 Arduino Mega 2560's ( one for the LEDs, one for a remote control ); each colored 
+circle can change color independently. 
 
 
-![Kadinsky picture](https://github.com/tweep/ledstrip-artproject/blob/master/pics/kadinsky.jpg) 
+![Kadinsky picture](./pics/kadinsky.jpg) 
 
+![Final installation](https://github.com/tweep/ledstrip-artproject/blob/master/pics/rainbow_mode.jpg) 
 
+![Daylight](https://github.com/tweep/ledstrip-artproject/blob/master/pics/plywood_cut_4_layers.jpg) 
+
+More pictures can be found [here](./pics/plywood_cut_4_layers.jpg) 
 
 Good reads on colors , perception and color theory : 
 
@@ -17,7 +23,7 @@ http://rileyjshaw.com/blog/hue-angle-transitions/
 A color transition in JSfiddle: https://jsfiddle.net/user/vogelj/   
 
 
-## Libraries / Dependencies 
+## Libraries /  Software / Dependencies 
 - FastLED 
 - Infrared library ( currently: IRemote, as IRlib2 has conflicts with interrupts) 
 
