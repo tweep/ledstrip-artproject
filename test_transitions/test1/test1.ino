@@ -15,8 +15,10 @@ FASTLED_USING_NAMESPACE
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 #define I2C_SLAVE_ADDRESS 9
 
-#define initial_pattern  1
+#define initial_pattern  2
 
+int globalCounter = 0; 
+byte stepper = 1; 
 
 #define NUM_STRIPS 3
 
@@ -54,6 +56,7 @@ typedef struct {    // Structure to hold a copy of the configuration of each str
 struct_ledconf ledConfig[NUM_STRIPS];
 
 CLEDController *controllers[NUM_STRIPS];
+  
 
 
 void setup() {
@@ -62,7 +65,7 @@ void setup() {
   controllers[0] = &FastLED.addLeds<WS2812B, 53>(leds, getOffsetOfStrand(0), nrLedsPerStrand[0]).setCorrection(TypicalLEDStrip);
   controllers[1] = &FastLED.addLeds<WS2812B, 51>(leds, getOffsetOfStrand(1), nrLedsPerStrand[1]).setCorrection(TypicalLEDStrip);
   controllers[2] = &FastLED.addLeds<WS2812B, 49>(leds, getOffsetOfStrand(2), nrLedsPerStrand[2]).setCorrection(TypicalLEDStrip);
-  
+
 
   for ( int j = 0; j < NUM_STRIPS; j++ ) {
     Serial.print("Strip"); 
@@ -71,12 +74,12 @@ void setup() {
     FastLED.show();
     gstrand=j;
     colorStripBlack();
-    delay(400);
+    //delay(400);
 
     // set very initial config 
       ledConfig[j].pattern      = initial_pattern;
       ledConfig[j].spd          = 0;
-      ledConfig[j].bright       = 128;
+      ledConfig[j].bright       = 256;
       ledConfig[j].color        = 0;
 
     
@@ -94,7 +97,19 @@ void setup() {
 
 typedef void (*SimplePatternList[])();
 // array with list of patters which serve as functions. problem is we can't hand arguments over so we use global variables
-SimplePatternList gPatterns = { rainbow, rainbowWithGlitter, confetti, sinelon, juggle, bpm, fadeToBlack, colorStripRed };
+
+
+SimplePatternList gPatterns = { rainbow, 
+                                rainbowWithGlitter, 
+                                confetti, 
+                                sinelon, 
+                                juggle, 
+                                bpm, 
+                                fadeToBlack, 
+                                colorStripRed,
+                                fadeByColor };
+
+
 
 int getOffsetOfStrand (int strand) {
   int offset = 0;
@@ -104,11 +119,9 @@ int getOffsetOfStrand (int strand) {
   return offset; 
 }
 
-
-
 void loop() {
   // BEGINNING OF -loop-
-  
+
   if (ET.receiveData()) {
       int strip = mydata.ledStripToConfigure;
       ledConfig[strip].pattern      = mydata.pattern;
@@ -133,6 +146,7 @@ void loop() {
     gstrand = i; // global index to point to current strand. gstrand (global Var!!) is used in the subroutines which do patterns. DONT change this !
     // the challenge is that we can't had this parameter over to the routine itself.
     gPatterns[ledConfig[i].pattern]();
+  //  Serial.println(ledConfig[i].bright);
     controllers[i]->showLeds(ledConfig[i].bright);
   }
  //  delay(3);
@@ -141,8 +155,6 @@ void loop() {
 
 void receive(int numBytes) {
 }
-
-
 
 void rainbow() {
   // use global variable strand
@@ -173,30 +185,171 @@ void addGlitter( fract8 chanceOfGlitter) {
   }
 }
 
+
 void fadeToBlack() {
   int offset = getOffsetOfStrand(gstrand);
   
   for (byte i = 0; i < nrLedsPerStrand[gstrand]; i++ ) {
+    // dim an existing color by 25 % ( 64 / 255 ) , eventually fading to full black. 
     leds[offset+i].fadeToBlackBy( 64 );
   }
 }
 
-void confetti() {
+
+// light random pixels in a similar color, slowly iterating trough the rainbow colors
+
+void confetti_rainbow() {
   // random colored speckles that blink in and fade smoothly
   int offset = getOffsetOfStrand(gstrand);
+
+  // dim an existing color by 10 % ( 
   fadeToBlackBy( &leds[offset], nrLedsPerStrand[gstrand], 10);
 
   int pos = random16(nrLedsPerStrand[gstrand]);
-  leds[offset+pos] += CHSV( gHue[gstrand] + random8(64), 200, 255);
+  leds[offset+pos] += CHSV( gHue[gstrand] + random8(64), 200, 255); // random number from 0-255
+  gHue[gstrand]++;
 }
+
+
+// light a pixel in a random color, dim it slowly. 
+void confetti_random_colors() {
+  // random colored speckles that blink in and fade smoothly
+  int offset = getOffsetOfStrand(gstrand);
+
+  // does this fade all pixels to black ? 
+  fadeToBlackBy( &leds[offset], nrLedsPerStrand[gstrand], 10);
+
+  int pos = random16(nrLedsPerStrand[gstrand]); // random number from [0 - pixels in the strand ] to choose random pixel
+
+  // create an CHSV object (this is used to represent a color in HSV color space)
+  // this gets automatically converted to RGB space
+  // += is adding color to the pixel ( color addtion ) 
+
+  gHue[gstrand]+=random8(64);  // add a number from 0-64 to the gHue for the strand 
+  leds[offset+pos] += CHSV( gHue[gstrand], 200, 255); // set a random pixel to the color  
+
+  /* another way to do this is to just add random8(255) to it. 
+   *  this could be a new parameter; 
+   *  byte color_added = random8(PARAMETER_SET_BY_USER) 
+   *    leds[offset+pos] += CHSV( gHue[gstrand] + color_added, 200, 255); // set a random pixel to the color  
+   *    
+   *    Another parameter could be that the user can set the gHUE for the strand - so he can have a confetti in red, green, blue - whatever color he chooses. 
+   *    like this - todo: add function to remote so user can the HUE of a selected strand. 
+   *      //gHue[gstrand] = 50; // yellow
+          //gHue[gstrand] = 171; // blue confetti 
+          // gHue[gstrand] = 213; // pink confetti 
+
+   */
+
+}
+
+
+
+void confetti_parameters_can_be_added() {
+  int offset = getOffsetOfStrand(gstrand);
+
+  // does this fade all pixels to black ? 
+  fadeToBlackBy( &leds[offset], nrLedsPerStrand[gstrand], 10);
+
+  int pos = random16(nrLedsPerStrand[gstrand]); // random number from [0 - pixels in the strand ] to choose random pixel
+
+  // create an CHSV object (this is used to represent a color in HSV color space)
+  // this gets automatically converted to RGB space
+  // += is adding color to the pixel ( color addtion ) 
+
+  gHue[gstrand]=100;
+  //gHue[gstrand] = 50; // yellow
+  //gHue[gstrand] = 171; // blue confetti 
+  // gHue[gstrand] = 213; // pink confetti 
+                                          // the RANDOM(64) DEFINES how much we will deviate from the base color and reach into the next one. 
+                                          // if gHue[strand] == 0 and rand(32) than we have green confetti 
+                                          // if gHue[strand] == 0 and rand(128) than we have green and pink confetti, as the HUE ranges from 0-128 
+                                          // if gHUE[strand] = 100 and rand(128) then we have confetti in the 100-228 HUE colors (blue and pink ) 
+
+  leds[offset+pos] += CHSV( gHue[gstrand] +random8(64), 200, 255); // set a random pixel to the color  
+
+ // gHue[gstrand]++;
+}
+
+
+void confetti() {
+  int offset = getOffsetOfStrand(gstrand);
+
+  // does this fade all pixels to black ? 
+  globalCounter += stepper ; 
+  
+  Serial.println(globalCounter);
+ // ledConfig[gstrand].bright-= 1;
+
+/* todo: 
+ *  slowly redunce the brightness, keep it low, then increase it again 
+ */
+ if ( globalCounter == 255 || globalCounter == 0) { 
+  stepper = stepper *-1;
+ }
+
+
+  if ( globalCounter % 40 == 0 ) { 
+      Serial.print("BINGO0000000000 Brightness : ");
+      Serial.println(ledConfig[1].bright); 
+
+     for ( int j = 0; j < NUM_STRIPS; j++ ) { 
+        ledConfig[j].bright += stepper ;
+        //  fadeToBlackBy( &leds[offset], nrLedsPerStrand[j], 1);
+
+     }
+  }
+
+  
+  if ( globalCounter >5000 ) { 
+    for ( int j = 0; j < NUM_STRIPS; j++ ) { 
+        int offset = getOffsetOfStrand(j);
+        fill_solid(&leds[offset], nrLedsPerStrand[j], CRGB::Blue);
+
+    }
+    globalCounter=0;
+  }
+  //fadeToBlackBy( &leds[offset], nrLedsPerStrand[gstrand], 1);
+
+/*
+  int pos = random16(nrLedsPerStrand[gstrand]); // random number from [0 - pixels in the strand ] to choose random pixel
+
+  // create an CHSV object (this is used to represent a color in HSV color space)
+  // this gets automatically converted to RGB space
+  // += is adding color to the pixel ( color addtion ) 
+
+  gHue[gstrand]=100;
+  //gHue[gstrand] = 50; // yellow
+  //gHue[gstrand] = 171; // blue confetti 
+  // gHue[gstrand] = 213; // pink confetti 
+                                          // the RANDOM(64) DEFINES how much we will deviate from the base color and reach into the next one. 
+                                          // if gHue[strand] == 0 and rand(32) than we have green confetti 
+                                          // if gHue[strand] == 0 and rand(128) than we have green and pink confetti, as the HUE ranges from 0-128 
+                                          // if gHUE[strand] = 100 and rand(128) then we have confetti in the 100-228 HUE colors (blue and pink ) 
+
+  leds[offset+pos] += CHSV( gHue[gstrand] +random8(64), 200, 255); // set a random pixel to the color  
+
+ // gHue[gstrand]++;
+ */
+}
+
 
 // change individual pixel a strand
 void sinelon() {
   // a colored dot sweeping back and forth, with fading trails
   int offset = getOffsetOfStrand(gstrand);
-  fadeToBlackBy( &leds[offset], nrLedsPerStrand[gstrand], 20);
+  fadeToBlackBy( &leds[offset], nrLedsPerStrand[gstrand], 20);  
   int pos = beatsin16(13, 0, nrLedsPerStrand[gstrand]);
   leds[offset+pos] += CHSV( gHue[gstrand], 255, 192);
+}
+
+
+void fadeByColor() {
+  int offset = getOffsetOfStrand(gstrand);
+  fill_solid(&leds[offset], nrLedsPerStrand[gstrand], CRGB::Blue);
+  
+  fadeUsingColor( &leds[offset], nrLedsPerStrand[gstrand], CRGB( 200, 100, 50));
+
 }
 
 
