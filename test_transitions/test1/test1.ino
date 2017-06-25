@@ -73,7 +73,9 @@ void setup() {
     FastLED[j].showLeds(128); // set initial brightness of strip
     FastLED.show();
     gstrand=j;
-    colorStripBlack();
+   // colorStripBlack();
+   // colorStripBlue();
+
     //delay(400);
 
     // set very initial config 
@@ -101,7 +103,7 @@ typedef void (*SimplePatternList[])();
 
 SimplePatternList gPatterns = { rainbow, 
                                 rainbowWithGlitter, 
-                                confetti, 
+                                breathing_led_heartbeat, 
                                 sinelon, 
                                 juggle, 
                                 bpm, 
@@ -122,6 +124,7 @@ int getOffsetOfStrand (int strand) {
 void loop() {
   // BEGINNING OF -loop-
 
+if (0){ 
   if (ET.receiveData()) {
       int strip = mydata.ledStripToConfigure;
       ledConfig[strip].pattern      = mydata.pattern;
@@ -140,16 +143,15 @@ void loop() {
      Serial.println(" ");
 
   }
-
+}
   // Loop trough all strands and write the pattern.
   for (byte i = 0; i < NUM_STRIPS ; i++ ) {
-    gstrand = i; // global index to point to current strand. gstrand (global Var!!) is used in the subroutines which do patterns. DONT change this !
+    gstrand = i; 
+    // global index to point to current strand. gstrand (global Var!!) is used in the subroutines which do patterns. DONT change this !
     // the challenge is that we can't had this parameter over to the routine itself.
     gPatterns[ledConfig[i].pattern]();
-  //  Serial.println(ledConfig[i].bright);
     controllers[i]->showLeds(ledConfig[i].bright);
   }
- //  delay(3);
    // END OF -loop-
 }
 
@@ -272,65 +274,82 @@ void confetti_parameters_can_be_added() {
 }
 
 
-void confetti() {
+void breathing_led_heartbeat() {
   int offset = getOffsetOfStrand(gstrand);
 
-  // does this fade all pixels to black ? 
-  globalCounter += stepper ; 
-  
-  Serial.println(globalCounter);
- // ledConfig[gstrand].bright-= 1;
 
-/* todo: 
- *  slowly redunce the brightness, keep it low, then increase it again 
- */
- if ( globalCounter == 255 || globalCounter == 0) { 
-  stepper = stepper *-1;
- }
+  float val = (exp(sin(millis()/(500.0)*PI)) - 0.36787944)*108.0;
+  Serial.print("gstrand: ");
+  Serial.print(gstrand);
+  Serial.print("  val : ");
+  Serial.print(val);
+  Serial.print(" ghue :");
+  Serial.println(gHue[gstrand]);
+
+  // this can be done faster using the method in fill_rainbow() or fill_solid 
+ // for (byte x=0; x< nrLedsPerStrand[gstrand]; x++){
+  //   leds[offset+x] = CHSV( gHue[gstrand] , 128, 255); // random number from 0-255
+// }
+  ledConfig[gstrand].bright=val;
+ fill_solid(&leds[offset], nrLedsPerStrand[gstrand],  CHSV( gHue[gstrand] , 255, 255));
+
+ // only change the color once we 'breathed out'  
+  if(val < 0.1 ){
+    gHue[gstrand] = gHue[gstrand]+random8(0,25);
+    //gHue[gstrand] = gHue[gstrand]+5;
+     // gHue[gstrand] = random8();
+
+  }
+}
 
 
-  if ( globalCounter % 40 == 0 ) { 
-      Serial.print("BINGO0000000000 Brightness : ");
-      Serial.println(ledConfig[1].bright); 
+void breathing_led_heartbeat_rainbow_single_color() {
+  int offset = getOffsetOfStrand(gstrand);
 
-     for ( int j = 0; j < NUM_STRIPS; j++ ) { 
-        ledConfig[j].bright += stepper ;
-        //  fadeToBlackBy( &leds[offset], nrLedsPerStrand[j], 1);
 
-     }
+  float val = (exp(sin(millis()/(2000.0)*PI)) - 0.36787944)*108.0;
+  Serial.print("gstrand: ");
+  Serial.print(gstrand);
+  Serial.print("  val : ");
+  Serial.print(val);
+  Serial.print("ghue :");
+  Serial.println(gHue[gstrand]);
+
+  ledConfig[gstrand].bright=val;
+  fill_solid(&leds[offset], nrLedsPerStrand[gstrand],  CHSV( gHue[gstrand] , 128, 255));
+
+ // change the gHue slowly for each strand, randomly. 
+  if(random8(2)<1){
+    gHue[gstrand]++;
+  }
+}
+
+void breathing_led_heartbeat_rainbow() {
+  int offset = getOffsetOfStrand(gstrand);
+
+  float factor = 1;
+  if ( gstrand == 1 ){
+    factor = 1.3;
+  }
+   if ( gstrand == 2 ){
+    factor = 1.6;
   }
 
-  
-  if ( globalCounter >5000 ) { 
-    for ( int j = 0; j < NUM_STRIPS; j++ ) { 
-        int offset = getOffsetOfStrand(j);
-        fill_solid(&leds[offset], nrLedsPerStrand[j], CRGB::Blue);
+  float val = (exp(sin(millis()/(factor*2000.0)*PI)) - 0.36787944)*108.0;
+  Serial.print("gstrand: ");
+  Serial.print(gstrand);
+  Serial.print("  val : ");
+  Serial.println(val);
+  ledConfig[gstrand].bright=val;
 
-    }
-    globalCounter=0;
-  }
-  //fadeToBlackBy( &leds[offset], nrLedsPerStrand[gstrand], 1);
+  // add color animator [ some pix are red, some are gree, some are blue ]  ( otherwise it will all be just one color ) 
+  fill_rainbow(&leds[getOffsetOfStrand(gstrand)] , nrLedsPerStrand[gstrand], gHue[gstrand], 3);
 
-/*
-  int pos = random16(nrLedsPerStrand[gstrand]); // random number from [0 - pixels in the strand ] to choose random pixel
 
-  // create an CHSV object (this is used to represent a color in HSV color space)
-  // this gets automatically converted to RGB space
-  // += is adding color to the pixel ( color addtion ) 
-
-  gHue[gstrand]=100;
-  //gHue[gstrand] = 50; // yellow
-  //gHue[gstrand] = 171; // blue confetti 
-  // gHue[gstrand] = 213; // pink confetti 
-                                          // the RANDOM(64) DEFINES how much we will deviate from the base color and reach into the next one. 
-                                          // if gHue[strand] == 0 and rand(32) than we have green confetti 
-                                          // if gHue[strand] == 0 and rand(128) than we have green and pink confetti, as the HUE ranges from 0-128 
-                                          // if gHUE[strand] = 100 and rand(128) then we have confetti in the 100-228 HUE colors (blue and pink ) 
-
-  leds[offset+pos] += CHSV( gHue[gstrand] +random8(64), 200, 255); // set a random pixel to the color  
+ // fill_solid(&leds[offset], nrLedsPerStrand[gstrand], CRGB::Red);
 
  // gHue[gstrand]++;
- */
+  
 }
 
 
@@ -383,10 +402,15 @@ void colorStripRed() {
   int offset = getOffsetOfStrand(gstrand);
   fill_solid(&leds[offset], nrLedsPerStrand[gstrand], CRGB::Red);
 }
+
+void colorStripBlue() {
+  int offset = getOffsetOfStrand(gstrand);
+  fill_solid(&leds[offset], nrLedsPerStrand[gstrand], CRGB::Blue);
+}
     
 void colorStripBlack() {
   int offset = getOffsetOfStrand(gstrand);
-  fill_solid(&leds[offset], nrLedsPerStrand[gstrand], CRGB::Blue);
+  fill_solid(&leds[offset], nrLedsPerStrand[gstrand], CRGB::Black);
 }
 
 
