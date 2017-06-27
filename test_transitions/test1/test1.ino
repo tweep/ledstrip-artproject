@@ -325,7 +325,7 @@ void breathing_led_heartbeat_rainbow_single_color() {
 }
 
 void breathing_led_heartbeat_rainbow() {
-  int offset = getOffsetOfStrand(gstrand);
+ // int offset = getOffsetOfStrand(gstrand);
 
   float factor = 1;
   if ( gstrand == 1 ){
