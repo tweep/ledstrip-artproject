@@ -22,8 +22,19 @@
 #include "MenuEntry.h"
 #include "MenuLCD.h"
 #include "MenuManager.h"
-#include <IRremote.h>
-#include <IRremoteInt.h>
+
+#include <IRLibDecodeBase.h> 
+#include <IRLib_P07_NECx.h>  // must be first but others can be any order.
+#include <IRLibCombo.h>      // After all protocols, include this
+IRdecode myDecoder;          // instance of IRdecoder
+
+//#include <IRLibRecv.h>      // Include a receiver either this or IRLibRecvPCI or IRLibRecvLoop
+//IRrecv myReceiver(53);  //pin number for the receiver
+
+#include <IRLibRecvLoop.h>  // this receiver can be delayed which works better for my remote so cmds are not send twice
+        
+IRrecvLoop myReceiver(53);  //pin number for the receiver
+
 
 
 /* 
@@ -44,7 +55,7 @@ const int LCDRS = 8;
 
 #define NUM_STRIPS 36
 #define gNrPatterns  7   // 0 to 7 - change this if you add new patterns. not ideal really. just do ++ and use type byte and check on slave if it's out of aray 
-#define blackPattern 6
+#define blackPattern 0
 
 bool configUpdated = false;
 bool gSwitch       = false;
@@ -53,19 +64,11 @@ byte gPattern      = 0;
 int  gBright       = 128;     // start brightness
 
 // these values will be applied to ALL strands at startup
-byte initialPattern    = 0;
+byte initialPattern    = 1;
 byte initialSpeed      = 60;
 byte initialBrightness = 200;
 
-
-// IR REMOTE CODE
-#define IR_RECV_PIN    53
-
 byte gPrevPattern[NUM_STRIPS];
-
-
-IRrecv irrecv(IR_RECV_PIN);
-decode_results results;
 
 EasyTransferI2C ET; 
 
@@ -263,16 +266,15 @@ g_menuManager.MenuDown();
 }
 
 void setup() {  
-  delay(1000); // 3 second delay for recovery         
+  delay(2000); while (!Serial); //delay for Leonardo
+        
   Serial.begin(115200);
-  Serial.println("READY");
+
+  myReceiver.enableIRIn(); // Start the IR receiver
+
+ // setupMenus();
   
-  IRrecv irrecv(IR_RECV_PIN);
-  irrecv.enableIRIn();
-  
-  setupMenus();
-  
-  //EasyTransfer setup 
+  //EasyTransfer I2C setup 
   Wire.begin();
   ET.begin(details(mydata), &Wire);
   randomSeed(analogRead(0));
@@ -284,13 +286,17 @@ void setup() {
 
 void loop()  {
 
-  // INPUT from INFRARED REMOTE 
-  while (!irrecv.isIdle());
-  
-  if (irrecv.decode(&results)) {  
-     configure_LCD_Menu_via_IR_remote(results.value);
-     irrecv.resume();
-   }
+  //Continue looping until you get a complete signal received
+  if (myReceiver.getResults()) { 
+    myDecoder.decode();             //Decode it
+    //myDecoder.dumpResults(false);  //Now print results. Use false for less detail
+
+    configure_LCD_Menu_via_IR_remote((myDecoder.value));
+    delay(15);
+    myReceiver.enableIRIn();      //Restart receiver
+  }
+
+
 
   // INPUT from LCD keypad 
   /*
@@ -310,12 +316,20 @@ void loop()  {
 
 
 void i2c_send_init_config(){
+  
    Serial.println("Sending initial configuration to SLAVE LED driver");
-   
-     
-   /* Loop trough all strands and send the inital configuration to the   
-    *  other Arduino
-    */
+  for (byte i=0; i < NUM_STRIPS; i++){ 
+     Serial.print("INIT Strand: ");
+     Serial.println(i);
+     mydata.ledStripToConfigure = i; 
+     mydata.pattern             = blackPattern;
+     mydata.spd                 = initialSpeed;
+     mydata.bright              = initialBrightness;
+     mydata.color               = 0;
+     ET.sendData(I2C_SLAVE_ADDRESS);
+     delay(30);
+   }
+   // Loop trough all strands and send the inital configuration to the SLAVE arduino
     
    for (byte i=0; i < NUM_STRIPS; i++){ 
      Serial.print("INIT Strand: ");
@@ -326,7 +340,20 @@ void i2c_send_init_config(){
      mydata.bright              = initialBrightness;
      mydata.color               = 0;
      ET.sendData(I2C_SLAVE_ADDRESS);
-     delay(15);
+     delay(45);
+   }
+   delay(100);
+      Serial.println("Sending initial configuration to SLAVE LED driver");
+  for (byte i=0; i < NUM_STRIPS; i++){ 
+     Serial.print("INIT Strand: ");
+     Serial.println(i);
+     mydata.ledStripToConfigure = i; 
+     mydata.pattern             = blackPattern;
+     mydata.spd                 = initialSpeed;
+     mydata.bright              = initialBrightness;
+     mydata.color               = 0;
+     ET.sendData(I2C_SLAVE_ADDRESS);
+     delay(45);
    }
 }
 
@@ -336,18 +363,22 @@ void i2c_send_data_structure(){
     gConf = !gConf;  // flag if we choose a global config parameter or not.
                      // a global config param will be sent to ALL strands
 
-      for (byte i=0; i < NUM_STRIPS; i++){ 
-        mydata.pattern = ledConfig[i].pattern;
-        mydata.bright =  ledConfig[i].bright;
-        mydata.ledStripToConfigure = i;
-        for(byte j=0;j<3;j++){
+   //  for (byte i=0; i < NUM_STRIPS; i++){ 
+        mydata.pattern = ledConfig[-1].pattern;
+        mydata.bright =  ledConfig[-1].bright;
+        // change - if it's a global config, the strip to configure is "-1" 
+        // so we don't have to send the data for all 36 strands.
+       // mydata.ledStripToConfigure = i;
+         mydata.ledStripToConfigure = -1;
+
+       //for(byte j=0;j<3;j++){
           ET.sendData(I2C_SLAVE_ADDRESS);
-          delay(15);
-        }
+       //   delay(15);
+     //  }
       //  Serial.print("Sending data for all strands...");
    //     Serial.println(i);
      //   delay(30);
-      }
+  //    }
       Serial.print("Globbal config updated - sending data.. ");
       Serial.print("Strip: ");Serial.print(mydata.ledStripToConfigure); 
       Serial.print(" pattern: "); Serial.print(mydata.pattern);
@@ -358,20 +389,22 @@ void i2c_send_data_structure(){
 
 
   }else {
-   mydata.pattern      = ledConfig[mydata.ledStripToConfigure].pattern;
-   mydata.spd          = ledConfig[mydata.ledStripToConfigure].spd;
-   mydata.bright       = ledConfig[mydata.ledStripToConfigure].bright;
-   mydata.color        = ledConfig[mydata.ledStripToConfigure].color;
-
+   for (byte i=0; i < NUM_STRIPS; i++){ 
+      mydata.ledStripToConfigure = i;
+      mydata.pattern      = ledConfig[mydata.ledStripToConfigure].pattern;
+      mydata.spd          = ledConfig[mydata.ledStripToConfigure].spd;
+      mydata.bright       = ledConfig[mydata.ledStripToConfigure].bright;
+      mydata.color        = ledConfig[mydata.ledStripToConfigure].color;
   
-   Serial.print("Strand specific config updated - sending data.. ");
-   Serial.print("Strip: ");Serial.print(mydata.ledStripToConfigure); 
-   Serial.print(" pattern: "); Serial.print(ledConfig[mydata.ledStripToConfigure].pattern);
-   Serial.print(" speed: "); Serial.print(ledConfig[mydata.ledStripToConfigure].spd);
-   Serial.print(" brigh: "); Serial.print(ledConfig[mydata.ledStripToConfigure].bright);
-   Serial.print(" color: "); Serial.print(ledConfig[mydata.ledStripToConfigure].color);
-   Serial.println(" ");
-   ET.sendData(I2C_SLAVE_ADDRESS);
+      Serial.print("Strand specific config updated - sending data.. ");
+      Serial.print("Strip: ");Serial.print(mydata.ledStripToConfigure); 
+      Serial.print(" pattern: "); Serial.print(ledConfig[mydata.ledStripToConfigure].pattern);
+      Serial.print(" speed: "); Serial.print(ledConfig[mydata.ledStripToConfigure].spd);
+      Serial.print(" brigh: "); Serial.print(ledConfig[mydata.ledStripToConfigure].bright);
+      Serial.print(" color: "); Serial.print(ledConfig[mydata.ledStripToConfigure].color);
+      Serial.println(" ");
+      ET.sendData(I2C_SLAVE_ADDRESS);
+   }
 
   }
 }
@@ -627,23 +660,16 @@ void configureStrands(){
     ledConfig[i].pattern             = initialPattern;
     ledConfig[i].spd                 = initialSpeed;
     ledConfig[i].bright              = initialBrightness;
-    ledConfig[i].color               =  0;
-
+    ledConfig[i].color               = 0;
   }
 }
 
 void turnAllStrandsOnOff(){
   
-
-  for (byte i=0; i < NUM_STRIPS; i++){ 
-    if ( gSwitch == true ) { 
-      Serial.println("Turn all strands back to previous pattern / ON ");
-      ledConfig[i].pattern = gPrevPattern[i];
-    }else{ 
-      Serial.println("Turn all strands back to blackend pattern / OFF ");
-      gPrevPattern[i] = ledConfig[i].pattern; // save previous pattern for when we turn it back on again.
-      ledConfig[i].pattern = blackPattern; // pattern 6 is the "BLACK PATTERN" 
-    }
+  if ( gSwitch == true ) {   
+      ledConfig[-1].pattern = initialPattern;
+  }else{      
+      ledConfig[-1].pattern = blackPattern;
   }
   gSwitch = !gSwitch; 
   gConf = true; 
@@ -651,19 +677,14 @@ void turnAllStrandsOnOff(){
 
 void gbrightnessUp(){
    gConf = true; 
-   gBright = (byte) (gBright + 25);
-   for (byte i=0; i < NUM_STRIPS; i++){ 
-    ledConfig[i].bright = gBright;
-   }
-
+   gBright = (byte) (gBright + 5);
+   ledConfig[-1].bright = gBright;
 }
 
 void gbrightnessDown(){
    gConf = true;  // flag to indicate that we send config for ALL strands.
-   gBright = (byte) (gBright - 25);
-   for (byte i=0; i < NUM_STRIPS; i++){ 
-    ledConfig[i].bright = gBright;
-   }
+   gBright = (byte) (gBright - 5);
+   ledConfig[-1].bright = gBright;
 }
 
 void setNextPatternForStrand(int strand){
@@ -677,22 +698,17 @@ void setNextPatternForStrand(int strand){
 void setNextGlobalPattern(){
   // Rotate all strands to the same next global pattern
   gConf = true;  // flag to indicate that we send config for ALL strands.
-
-  for (byte i=0; i < NUM_STRIPS; i++){ 
-    ledConfig[i].pattern = gPattern;
-  }
   gPattern++;
-  gPattern = ( gPattern % gNrPatterns);
+  ledConfig[-1].pattern = (gPattern % gNrPatterns);
+  //ledConfig[-1].pattern = gPattern;
+
 }
 
 void setPrevGlobalPattern(){
   gConf = true;  // flag to indicate that we send config for ALL strands.
-
-  for (byte i=0; i < NUM_STRIPS; i++){ 
-    ledConfig[i].pattern = gPattern;
-  }
   gPattern--;
-  gPattern = ( gPattern % gNrPatterns);
+  ledConfig[-1].pattern = (gPattern % gNrPatterns);
+// ledConfig[-1].pattern = gPattern;
 }
 
 
