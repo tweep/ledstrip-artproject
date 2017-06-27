@@ -336,18 +336,22 @@ void i2c_send_data_structure(){
     gConf = !gConf;  // flag if we choose a global config parameter or not.
                      // a global config param will be sent to ALL strands
 
-      for (byte i=0; i < NUM_STRIPS; i++){ 
-        mydata.pattern = ledConfig[i].pattern;
-        mydata.bright =  ledConfig[i].bright;
-        mydata.ledStripToConfigure = i;
-        for(byte j=0;j<3;j++){
+   //  for (byte i=0; i < NUM_STRIPS; i++){ 
+        mydata.pattern = ledConfig[-1].pattern;
+        mydata.bright =  ledConfig[-1].bright;
+        // change - if it's a global config, the strip to configure is "-1" 
+        // so we don't have to send the data for all 36 strands.
+       // mydata.ledStripToConfigure = i;
+         mydata.ledStripToConfigure = -1;
+
+       //for(byte j=0;j<3;j++){
           ET.sendData(I2C_SLAVE_ADDRESS);
-          delay(15);
-        }
+       //   delay(15);
+     //  }
       //  Serial.print("Sending data for all strands...");
    //     Serial.println(i);
      //   delay(30);
-      }
+  //    }
       Serial.print("Globbal config updated - sending data.. ");
       Serial.print("Strip: ");Serial.print(mydata.ledStripToConfigure); 
       Serial.print(" pattern: "); Serial.print(mydata.pattern);
@@ -678,21 +682,20 @@ void setNextGlobalPattern(){
   // Rotate all strands to the same next global pattern
   gConf = true;  // flag to indicate that we send config for ALL strands.
 
-  for (byte i=0; i < NUM_STRIPS; i++){ 
-    ledConfig[i].pattern = gPattern;
-  }
   gPattern++;
-  gPattern = ( gPattern % gNrPatterns);
+
+  ledConfig[-1].pattern = gPattern;
+ // gPattern = ( gPattern % gNrPatterns);
 }
 
 void setPrevGlobalPattern(){
   gConf = true;  // flag to indicate that we send config for ALL strands.
 
-  for (byte i=0; i < NUM_STRIPS; i++){ 
-    ledConfig[i].pattern = gPattern;
-  }
   gPattern--;
-  gPattern = ( gPattern % gNrPatterns);
+
+  ledConfig[-1].pattern = gPattern;
+ 
+//  gPattern = ( gPattern % gNrPatterns);
 }
 
 
