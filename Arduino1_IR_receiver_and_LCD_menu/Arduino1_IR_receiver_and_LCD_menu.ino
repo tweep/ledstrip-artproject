@@ -43,7 +43,7 @@ const int LCDRS = 8;
 
 
 #define NUM_STRIPS 36
-#define gNrPatterns  7   // 0 to 7 
+#define gNrPatterns  7   // 0 to 7 - change this if you add new patterns. not ideal really. just do ++ and use type byte and check on slave if it's out of aray 
 #define blackPattern 6
 
 bool configUpdated = false;
@@ -125,6 +125,7 @@ unsigned int g_isDisplaying = false;
  */
 
 
+/* LED MENU configuration for different strips */ 
 
 void configureLEDstripOne ( char * pMenuText, void * pUserData ) {
   // set the variable at address pUserData to value 0 (address gets handed over in menu with &variable)
@@ -436,6 +437,7 @@ void configure_LCD_Menu_via_LEDScreenButtons(int rk) {
 void configure_LCD_Menu_via_IR_remote (long tmp) {
   Serial.print("Retrieved HEX:");
   Serial.println(tmp,HEX);
+  
   switch (tmp) {
 
      case 0xE0E040BF : 
@@ -657,7 +659,7 @@ void gbrightnessUp(){
 }
 
 void gbrightnessDown(){
-   gConf = true; 
+   gConf = true;  // flag to indicate that we send config for ALL strands.
    gBright = (byte) (gBright - 25);
    for (byte i=0; i < NUM_STRIPS; i++){ 
     ledConfig[i].bright = gBright;
