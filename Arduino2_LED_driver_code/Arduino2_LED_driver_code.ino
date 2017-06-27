@@ -137,7 +137,7 @@ void setup() {
     FastLED.show();
     gstrand=j;
     colorStripBlack();
-    delay(400);
+    delay(100);
 
     // set very initial config 
       ledConfig[j].pattern      = 6;
@@ -160,7 +160,17 @@ void setup() {
 
 typedef void (*SimplePatternList[])();
 // array with list of patters which serve as functions. problem is we can't hand arguments over so we use global variables
-SimplePatternList gPatterns = { rainbow, rainbowWithGlitter, confetti, sinelon, juggle, bpm, fadeToBlack, colorStripRed };
+SimplePatternList gPatterns = { //breathing_led_heartbeat, 
+                               rainbow, 
+                                rainbowWithGlitter, 
+                                confetti, 
+                                sinelon, 
+                                juggle,
+                                bpm, 
+                                fadeToBlack,
+                                colorStripRed };
+
+
 
 int getOffsetOfStrand (int strand) {
   int offset = 0;
@@ -194,9 +204,10 @@ void loop() {
 
   }
 
-  // Loop trough all strands and write the pattern.
+  // Loop trough all strands and write/apply the values of the ledConfig to each strand.
   for (byte i = 0; i < NUM_STRIPS ; i++ ) {
-    gstrand = i; // global index to point to current strand. gstrand (global Var!!) is used in the subroutines which do patterns. DONT change this !
+    gstrand = i; // global index to point to current strand. gstrand (global Var!!) is used in the subroutines which do patterns. 
+    // DONT change this !
     // the challenge is that we can't had this parameter over to the routine itself.
     gPatterns[ledConfig[i].pattern]();
     controllers[i]->showLeds(ledConfig[i].bright);
@@ -208,6 +219,44 @@ void loop() {
 void receive(int numBytes) {
 }
 
+void breathing_led_heartbeat() {
+  int offset = getOffsetOfStrand(gstrand);
+
+  /* uploaded 26-06-2017
+    todo:
+      - only light up a certain nu ber of circles at the same time ( like 2,3,4 ) 
+      - randomly switch to a new circle once the currenlty light cirlce is off
+      - ( need a factor for each strand to define the speed of light on / light off 
+      - not all cirlces adaapot the new (led breathing pattern - why ? ) some stay on the previous pattern.
+      - refactor how global pattersn are sent. 
+  */
+
+  float val = (exp(sin(millis()/(gstrand*200.0)*PI)) - 0.36787944)*108.0;
+  Serial.print("gstrand: ");
+  Serial.print(gstrand);
+  Serial.print("  val : ");
+  Serial.print(val);
+  Serial.print(" ghue :");
+  Serial.println(gHue[gstrand]);
+
+  // this can be done faster using the method in fill_rainbow() or fill_solid 
+ // for (byte x=0; x< nrLedsPerStrand[gstrand]; x++){
+  //   leds[offset+x] = CHSV( gHue[gstrand] , 128, 255); // random number from 0-255
+// }
+  ledConfig[gstrand].bright=val;
+
+ fill_solid(&leds[offset], nrLedsPerStrand[gstrand],  CHSV( gHue[gstrand] , 255, 255));
+
+ // only change the color once we 'breathed out'  
+  if(val < 0.1 ){
+    gHue[gstrand] = gHue[gstrand]+random8(0,25);
+    //gHue[gstrand] = gHue[gstrand]+5;
+     // gHue[gstrand] = random8();
+
+  }
+}
+
+
 
 
 void rainbow() {
@@ -218,7 +267,9 @@ void rainbow() {
 
  //  fill_rainbow(leds , nrLedsPerStrand[gstrand], gHue[gstrand], 7);
 
- fill_rainbow(leds, getOffsetOfStrand(gstrand) , nrLedsPerStrand[gstrand], gHue[gstrand], 7);
+  fill_rainbow(&leds[getOffsetOfStrand(gstrand)] , nrLedsPerStrand[gstrand], gHue[gstrand], 3);
+
+ // fill_rainbow(leds, getOffsetOfStrand(gstrand) , nrLedsPerStrand[gstrand], gHue[gstrand], 7);
 
 }
 
@@ -250,7 +301,8 @@ void fadeToBlack() {
 void confetti() {
   // random colored speckles that blink in and fade smoothly
   int offset = getOffsetOfStrand(gstrand);
-  fadeToBlackBy( leds,offset, nrLedsPerStrand[gstrand], 10);
+//  fadeToBlackBy( leds,offset, nrLedsPerStrand[gstrand], 10);
+  fadeToBlackBy( &leds[offset], nrLedsPerStrand[gstrand], 20);  
 
   int pos = random16(nrLedsPerStrand[gstrand]);
   leds[offset+pos] += CHSV( gHue[gstrand] + random8(64), 200, 255);
@@ -260,7 +312,9 @@ void confetti() {
 void sinelon() {
   // a colored dot sweeping back and forth, with fading trails
   int offset = getOffsetOfStrand(gstrand);
-  fadeToBlackBy( leds,offset, nrLedsPerStrand[gstrand], 20);
+    fadeToBlackBy( &leds[offset], nrLedsPerStrand[gstrand], 20);  
+
+  //fadeToBlackBy( leds,offset, nrLedsPerStrand[gstrand], 20);
   int pos = beatsin16(13, 0, nrLedsPerStrand[gstrand]);
   leds[offset+pos] += CHSV( gHue[gstrand], 255, 192);
 }
@@ -282,7 +336,9 @@ void bpm() {
 void juggle() {
   // eight colored dots, weaving in and out of sync with each other
   int offset = getOffsetOfStrand(gstrand);
-  fadeToBlackBy( leds,offset, nrLedsPerStrand[gstrand], 20);
+  fadeToBlackBy( &leds[offset], nrLedsPerStrand[gstrand], 20);  
+
+ // fadeToBlackBy( leds,offset, nrLedsPerStrand[gstrand], 20);
  
   byte dothue = 0;
   for ( int i = 0; i < 8; i++) {
@@ -294,12 +350,12 @@ void juggle() {
 
 void colorStripRed() {
   int offset = getOffsetOfStrand(gstrand);
-  fill_solid(leds, offset, nrLedsPerStrand[gstrand], CRGB::Red);
+  fill_solid(&leds[offset], nrLedsPerStrand[gstrand], CRGB::Red);
 }
     
 void colorStripBlack() {
   int offset = getOffsetOfStrand(gstrand);
-  fill_solid(leds, offset, nrLedsPerStrand[gstrand], CRGB::Blue);
+    fill_solid(&leds[offset], nrLedsPerStrand[gstrand], CRGB::Black);
 }
 
 
