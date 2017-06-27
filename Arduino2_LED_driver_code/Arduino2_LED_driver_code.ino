@@ -137,10 +137,10 @@ void setup() {
     FastLED.show();
     gstrand=j;
     colorStripBlack();
-    delay(100);
+    delay(50);
 
     // set very initial config 
-      ledConfig[j].pattern      = 6;
+      ledConfig[j].pattern      = 6; 
       ledConfig[j].spd          = 0;
       ledConfig[j].bright       = 0;
       ledConfig[j].color        = 0;
@@ -170,6 +170,7 @@ SimplePatternList gPatterns = { //breathing_led_heartbeat,
                                 fadeToBlack,
                                 colorStripRed };
 
+int gNrPatterns = ARRAY_SIZE(gPatterns);
 
 
 int getOffsetOfStrand (int strand) {
@@ -187,21 +188,32 @@ void loop() {
   
   if (ET.receiveData()) {
       int strip = mydata.ledStripToConfigure;
-      ledConfig[strip].pattern      = mydata.pattern;
-      ledConfig[strip].spd          = mydata.spd;
-      ledConfig[strip].bright       = mydata.bright;
-      ledConfig[strip].color        = mydata.color;
 
-     controllers[strip]->showLeds(ledConfig[strip].bright);
-   
-     Serial.println("Retrieving data...");
-     Serial.print(" Strip: "); Serial.print(mydata.ledStripToConfigure);
-     Serial.print(" pattern: "); Serial.print(mydata.pattern);
-     Serial.print(" speed: "); Serial.print(mydata.spd);
-     Serial.print(" brigh: "); Serial.print(mydata.bright);
-     Serial.print(" color: "); Serial.print(mydata.color);
-     Serial.println(" ");
+      // if we retrieve GLOBAL data we apply it to all strands 
+      if (strip == -1) { 
+           for (byte i = 0; i < NUM_STRIPS ; i++ ) {
+             ledConfig[i].pattern      = ( mydata.pattern % gNrPatterns);
+             ledConfig[i].spd          = mydata.spd;
+             ledConfig[i].bright       = mydata.bright;
+             ledConfig[i].color        = mydata.color;
+             controllers[i]->showLeds(ledConfig[i].bright);
+           }
+      }else { 
+        ledConfig[strip].pattern      = ( mydata.pattern % gNrPatterns);
 
+        ledConfig[strip].spd          = mydata.spd;
+        ledConfig[strip].bright       = mydata.bright;
+        ledConfig[strip].color        = mydata.color;
+        controllers[strip]->showLeds(ledConfig[strip].bright);
+      
+       Serial.println("Retrieving data...");
+       Serial.print(" Strip: "); Serial.print(mydata.ledStripToConfigure);
+       Serial.print(" pattern: "); Serial.print(mydata.pattern);
+       Serial.print(" speed: "); Serial.print(mydata.spd);
+       Serial.print(" brigh: "); Serial.print(mydata.bright);
+       Serial.print(" color: "); Serial.print(mydata.color);
+       Serial.println(" ");
+      }
   }
 
   // Loop trough all strands and write/apply the values of the ledConfig to each strand.

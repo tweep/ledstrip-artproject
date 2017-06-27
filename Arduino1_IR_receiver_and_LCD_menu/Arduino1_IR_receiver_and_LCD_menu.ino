@@ -701,14 +701,13 @@ void setNextGlobalPattern(){
   gPattern++;
   ledConfig[-1].pattern = (gPattern % gNrPatterns);
   //ledConfig[-1].pattern = gPattern;
-
 }
 
 void setPrevGlobalPattern(){
   gConf = true;  // flag to indicate that we send config for ALL strands.
   gPattern--;
   ledConfig[-1].pattern = (gPattern % gNrPatterns);
-// ledConfig[-1].pattern = gPattern;
+  // ledConfig[-1].pattern = gPattern;
 }
 
 
